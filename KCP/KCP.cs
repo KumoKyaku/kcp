@@ -8,6 +8,7 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 using System.Linq;
 using System.Buffers.Binary;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace System.Net.Sockets.Protocol
 {
@@ -158,6 +159,7 @@ namespace System.Net.Sockets.Protocol
         int logmask;
         private readonly object ackLock = new object(); 
         List<uint> acklist = new List<uint>();
+        ConcurrentQueue<(uint sn, uint ts)> acklist2 = new ConcurrentQueue<(uint sn, uint ts)>();
         Memory<byte> buffer;
 
         #endregion
@@ -1357,10 +1359,6 @@ namespace System.Net.Sockets.Protocol
     }
 
 
-
-
-
-
     public static class KCPExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
     {
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
@@ -1369,4 +1367,176 @@ namespace System.Net.Sockets.Protocol
             return (uint)(Convert.ToInt64(time.Subtract(utc_time).TotalMilliseconds) & 0xffffffff);
         }
     }
+
+
+    public struct Seg
+    {
+        private int size;
+        readonly unsafe byte* ptr;
+        public unsafe Seg(byte* intPtr, int size) : this()
+        {
+            this.ptr = intPtr;
+            this.size = size;
+        }
+
+        public static Seg AllocHGlobal(int size)
+        {
+            IntPtr intPtr = Marshal.AllocHGlobal(size);
+            unsafe
+            {
+                return new Seg((byte*)intPtr.ToPointer(), size);
+            }
+        }
+
+        public static void Free(Seg seg)
+        {
+            unsafe
+            {
+                Marshal.FreeHGlobal((IntPtr)seg.ptr);
+            }
+        }
+
+        /// <summary>
+        /// offset = 0
+        /// </summary>
+        internal uint conv
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)ptr;
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)ptr = value;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// offset = 4
+        /// </summary>
+        internal uint cmd
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + 4);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + 4)= value;
+                }
+            }
+        }
+        /// <summary>
+        /// offset = 8
+        /// </summary>
+        internal uint frg
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + 8);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + 8)= value;
+                }
+            }
+        }
+        /// <summary>
+        /// offset = 12
+        /// </summary>
+        internal uint wnd
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + 12);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + 12) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// offset = 16
+        /// </summary>
+        internal uint ts
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + 16);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + 16) = value;
+                }
+            }
+        }
+        /// <summary>
+        /// offset = 4*5
+        /// </summary>
+        internal uint sn
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + 8);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + 8) = value;
+                }
+            }
+        }
+        /// <summary>
+        /// 当前消息序号
+        /// </summary>
+        internal uint sn = 0;
+        internal uint una = 0;
+        internal uint resendts = 0;
+        internal uint rto = 0;
+        internal uint fastack = 0;
+        internal uint xmit = 0;
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
