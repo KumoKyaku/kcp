@@ -1368,59 +1368,61 @@ namespace System.Net.Sockets.Protocol
         }
     }
 
-
-    public struct Seg
+    /// <summary>
+    /// 调整了没存布局，直接拷贝块提升性能。
+    /// </summary>
+    public struct KCPSEG
     {
-        private int size;
         readonly unsafe byte* ptr;
-        public unsafe Seg(byte* intPtr, int size) : this()
+        private unsafe KCPSEG(byte* intPtr, uint appendDateSize)
         {
             this.ptr = intPtr;
-            this.size = size;
+            len = appendDateSize;
         }
 
-        public static Seg AllocHGlobal(int size)
+        public static KCPSEG AllocHGlobal(int appendDateSize)
         {
-            IntPtr intPtr = Marshal.AllocHGlobal(size);
+            IntPtr intPtr = Marshal.AllocHGlobal(40 + appendDateSize);
             unsafe
             {
-                return new Seg((byte*)intPtr.ToPointer(), size);
+                return new KCPSEG((byte*)intPtr.ToPointer(), (uint)appendDateSize);
             }
         }
 
-        public static void Free(Seg seg)
+        public static void FreeHGlobal(KCPSEG seg)
         {
             unsafe
             {
                 Marshal.FreeHGlobal((IntPtr)seg.ptr);
             }
         }
-
+        
+        /// 以下为本机使用的参数
         /// <summary>
         /// offset = 0
         /// </summary>
-        internal uint conv
+        public uint resendts
         {
             get
             {
                 unsafe
                 {
-                    return *(uint*)ptr;
+                    return *(uint*)(ptr + 0);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)ptr = value;
+                    *(uint*)(ptr + 0) = value;
                 }
             }
         }
-        
+
         /// <summary>
         /// offset = 4
         /// </summary>
-        internal uint cmd
+        public uint rto
         {
             get
             {
@@ -1433,14 +1435,15 @@ namespace System.Net.Sockets.Protocol
             {
                 unsafe
                 {
-                    *(uint*)(ptr + 4)= value;
+                    *(uint*)(ptr + 4) = value;
                 }
             }
         }
+
         /// <summary>
         /// offset = 8
         /// </summary>
-        internal uint frg
+        public uint fastack
         {
             get
             {
@@ -1453,14 +1456,15 @@ namespace System.Net.Sockets.Protocol
             {
                 unsafe
                 {
-                    *(uint*)(ptr + 8)= value;
+                    *(uint*)(ptr + 8) = value;
                 }
             }
         }
+
         /// <summary>
         /// offset = 12
         /// </summary>
-        internal uint wnd
+        public uint xmit
         {
             get
             {
@@ -1478,55 +1482,217 @@ namespace System.Net.Sockets.Protocol
             }
         }
 
+        ///以下为需要网络传输的参数
+        public const int LocalOffset = 4 * 4;
         /// <summary>
-        /// offset = 16
+        /// offset = <see cref="LocalOffset"/>
         /// </summary>
-        internal uint ts
+        public uint conv
         {
             get
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + 16);
+                    return *(uint*)(ptr + LocalOffset + 0);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + 16) = value;
+                    *(uint*)(ptr + LocalOffset + 0) = value;
                 }
             }
         }
+
         /// <summary>
-        /// offset = 4*5
+        /// offset = <see cref="LocalOffset"/> + 4
         /// </summary>
-        internal uint sn
+        public byte cmd
         {
             get
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + 8);
+                    return *(ptr + LocalOffset + 4);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + 8) = value;
+                    *(ptr + LocalOffset + 4) = value;
                 }
             }
         }
+        
         /// <summary>
-        /// 当前消息序号
+        /// offset = <see cref="LocalOffset"/> + 5
         /// </summary>
-        internal uint sn = 0;
-        internal uint una = 0;
-        internal uint resendts = 0;
-        internal uint rto = 0;
-        internal uint fastack = 0;
-        internal uint xmit = 0;
+        public byte frg
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(ptr + LocalOffset + 5);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(ptr + LocalOffset + 5) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// offset = <see cref="LocalOffset"/> + 6
+        /// </summary>
+        public ushort wnd
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(ushort*)(ptr + LocalOffset + 6);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(ushort*)(ptr + LocalOffset + 6) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// offset = <see cref="LocalOffset"/> + 8
+        /// </summary>
+        public uint ts
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + LocalOffset + 8);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + LocalOffset + 8) = value;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// offset = <see cref="LocalOffset"/> + 12
+        /// </summary>
+        public uint sn
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + LocalOffset + 12);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + LocalOffset + 12) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// offset = <see cref="LocalOffset"/> + 16
+        /// </summary>
+        public uint una
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + LocalOffset + 16);
+                }
+            }
+            set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + LocalOffset + 16) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// offset = <see cref="LocalOffset"/> + 20
+        /// </summary>
+        public uint len
+        {
+            get
+            {
+                unsafe
+                {
+                    return *(uint*)(ptr + LocalOffset + 20);
+                }
+            }
+            private set
+            {
+                unsafe
+                {
+                    *(uint*)(ptr + LocalOffset + 20) = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 将片段中的要发送的数据拷贝到指定缓冲区
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public int Encode(Span<byte> buffer)
+        {
+            var datelen = (int)(24 + len);
+            if (BitConverter.IsLittleEndian)
+            {
+                ///网络传输统一使用大端编码
+                ///小端机器则需要逐个参数按大端写入
+                const int offset = 0;
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(offset), conv);
+                buffer[offset + 4] = cmd;
+                buffer[offset + 5] = frg;
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(offset +6), wnd);
+
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(offset + 8), ts);
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(offset + 12), sn);
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(offset + 16), una);
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(offset + 20), len);
+                unsafe
+                {
+                    Span<byte> sendDate = new Span<byte>(ptr + LocalOffset + 24, (int)len);
+                    sendDate.CopyTo(buffer);
+                }
+            }
+            else
+            {
+                ///大端可以一次拷贝
+                unsafe
+                {
+                    ///要发送的数据从LocalOffset开始。
+                    ///这里调整要发送字段和本机使用字段的位置，让数据和附加数据连续，节约一次拷贝。
+                    Span<byte> sendDate = new Span<byte>(ptr + LocalOffset, datelen);
+                    sendDate.CopyTo(buffer);
+                }
+            }
+            return datelen;
+        }
     }
 
 }
