@@ -3,7 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets.Protocol;
+using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +21,7 @@ namespace TestKCP
             }
         }
 
+
         static void Main(string[] args)
         {
             Console.WriteLine(ShowThread);
@@ -30,8 +31,8 @@ namespace TestKCP
             var handle2 = new Handle();
 
             const int conv = 123;
-            var kcp1 = new KCP(conv, handle1);
-            var kcp2 = new KCP(conv, handle2);
+            var kcp1 = new Kcp(conv, handle1);
+            var kcp2 = new Kcp(conv, handle2);
 
             kcp1.KCPRemote = kcp2;
             kcp2.KCPRemote = kcp1;
@@ -49,7 +50,7 @@ namespace TestKCP
             handle1.Out += buffer =>
             {
                 var next = random.Next(100);
-                if (next >= 50)///随机丢包
+                if (next >= 0)///随机丢包
                 {
                     //Console.WriteLine($"11------Thread[{Thread.CurrentThread.ManagedThreadId}]");
                     Task.Run(() =>
@@ -162,6 +163,13 @@ namespace TestKCP
             });
 
             kcp1.Send(sendbyte);
+
+            while (true)
+            {
+                Thread.Sleep(1000);
+                GC.Collect();
+            }
+
             Console.ReadLine();
         }
     }
