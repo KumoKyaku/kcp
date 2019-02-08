@@ -9,6 +9,7 @@ using System.Linq;
 using System.Buffers.Binary;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace System.Net.Sockets.Kcp
 {
@@ -96,7 +97,7 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_ASK_SEND = 1;  // need to send IKCP_CMD_WASK
         public const int IKCP_ASK_TELL = 2;  // need to send IKCP_CMD_WINS
         public const int IKCP_WND_SND = 32;
-        public const int IKCP_WND_RCV = 32;
+        public const int IKCP_WND_RCV = 128; // must >= max fragment size
         public const int IKCP_MTU_DEF = 1400;
         public const int IKCP_ACK_FAST = 3;
         public const int IKCP_INTERVAL = 100;
@@ -171,117 +172,39 @@ namespace System.Net.Sockets.Kcp
 
         
 
-        private readonly object sendlock = new object();
+        private readonly object snd_bufLock = new object();
         /// <summary>
         /// 发送等待队列
         /// </summary>
-        ConcurrentQueue<KcpSegment> sendWaitQ = new ConcurrentQueue<KcpSegment>();
+        ConcurrentQueue<KcpSegment> snd_queue = new ConcurrentQueue<KcpSegment>();
         /// <summary>
         /// 正在发送列表
         /// </summary>
-        List<KcpSegment> sendList = new List<KcpSegment>();
+        LinkedList<KcpSegment> snd_buf = new LinkedList<KcpSegment>();
 
-        private readonly object recvWaitlock = new object();
+        private readonly object rcv_queueLock = new object();
         /// <summary>
         /// 正在等待触发接收回调函数消息列表
+        /// <para>需要执行的操作  添加 遍历 删除</para>
         /// </summary>
-        List<KcpSegment> recvWaitList = new List<KcpSegment>();
+        List<KcpSegment> rcv_queue = new List<KcpSegment>();
 
-
-        private readonly object recvlock = new object();
+        private readonly object rcv_bufLock = new object();
         /// <summary>
         /// 正在等待重组消息列表
+        /// <para>需要执行的操作  添加 插入 遍历 删除</para>
         /// </summary>
-        List<KcpSegment> recvList = new List<KcpSegment>();
+        LinkedList<KcpSegment> rcv_buf = new LinkedList<KcpSegment>();
 
 
-        static uint Ibound(uint lower, uint middle, uint upper)
-        {
-            return Min(Max(lower, middle), upper);
-        }
+        
 
         static int Itimediff(uint later, uint earlier)
         {
             return ((int)(later - earlier));
         }
 
-        void Shrink_buf()
-        {
-            lock (sendlock)
-            {
-                snd_una = sendList.Count > 0 ? sendList[0].sn : snd_nxt;
-            }
-        }
-
-        // user/upper level recv: returns size, returns below zero for EAGAIN
-        int Recv(Span<byte> buffer)
-        {
-            if (0 == recvWaitList.Count)
-            {
-                return -1;
-            }
-
-            var peekSize = PeekSize();
-            if (0 > peekSize)
-            {
-                return -2;
-            }
-
-            if (peekSize > buffer.Length)
-            {
-                return -3;
-            }
-
-            var fast_recover = false;
-            if (recvWaitList.Count >= rcv_wnd)
-            {
-                fast_recover = true;
-            }
-
-            #region merge fragment.
-            // merge fragment.
-
-            var recvLength = 0;
-            lock (recvWaitlock)
-            {
-                var count = 0;
-                foreach (var seg in recvWaitList)
-                {
-                    seg.data.CopyTo(buffer.Slice(recvLength));
-                    recvLength += (int)seg.len;
-                    count++;
-                    int frg = seg.frg;
-
-                    KcpSegment.FreeHGlobal(seg);
-                    if (frg == 0)
-                    {
-                        break;
-                    }
-                }
-
-                if (count > 0)
-                {
-                    recvWaitList.RemoveRange(0, count);
-                }
-            }
-
-            #endregion
-
-            MoveRecvAvailableDate();
-
-            #region fast recover
-            /// fast recover
-            if (recvWaitList.Count < rcv_wnd && fast_recover)
-            {
-                // ready to send back IKCP_CMD_WINS in ikcp_flush
-                // tell remote my window size
-                probe |= IKCP_ASK_TELL;
-            }
-            #endregion
-
-
-            return recvLength;
-        }
+        
 
         /// <summary>
         /// when you received a low level packet (eg. UDP packet), call it
@@ -491,100 +414,9 @@ namespace System.Net.Sockets.Kcp
             return 0;
         }
 
-        // check the size of next message in the recv queue
-        int PeekSize()
-        {
+        
 
-            if (recvWaitList.Count == 0)
-            {
-                return -1;
-            }
-
-            var seq = recvWaitList[0];
-
-            if (0 == seq.frg)
-            {
-                return (int)seq.len;
-            }
-
-            if (recvWaitList.Count < seq.frg + 1)
-            {
-                return -1;
-            }
-
-            lock (recvWaitlock)
-            {
-                uint length = 0;
-
-                foreach (var item in recvWaitList)
-                {
-                    length += item.len;
-                    if (0 == item.frg)
-                    {
-                        break;
-                    }
-                }
-
-                return (int)length;
-            }
-        }
-
-        /// <summary>
-        /// user/upper level send, returns below zero for error
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
-        public int Send(Span<byte> buffer)
-        {
-            if (0 == buffer.Length)
-            {
-                return -1;
-            }
-
-            var count = 0;
-
-            if (buffer.Length < mss)
-            {
-                count = 1;
-            }
-            else
-            {
-                count = (int)(buffer.Length + mss - 1) / (int)mss;
-            }
-
-            if (count > 255)
-            {
-                return -2;
-            }
-
-            if (count == 0)
-            {
-                count = 1;
-            }
-
-            var offset = 0;
-
-            for (var i = 0; i < count; i++)
-            {
-                var size = 0;
-                if (buffer.Length - offset > mss)
-                {
-                    size = (int)mss;
-                }
-                else
-                {
-                    size = buffer.Length - offset;
-                }
-
-                var seg = KcpSegment.AllocHGlobal(size);
-                buffer.Slice(offset,size).CopyTo(seg.data);
-                offset += size;
-                seg.frg = (byte)(count - i - 1);
-                sendWaitQ.Enqueue(seg);
-            }
-
-            return 0;
-        }
+        
 
         /// <summary>
         /// update state (call it repeatedly, every 10ms-100ms), or you can ask
@@ -748,7 +580,7 @@ namespace System.Net.Sockets.Kcp
 
             while (Itimediff(snd_nxt, snd_una + cwnd_) < 0)
             {
-                if (sendWaitQ.TryDequeue(out var newseg))
+                if (snd_queue.TryDequeue(out var newseg))
                 {
                     newseg.conv = conv;
                     newseg.cmd = IKCP_CMD_PUSH;
@@ -760,9 +592,9 @@ namespace System.Net.Sockets.Kcp
                     newseg.rto = rx_rto;
                     newseg.fastack = 0;
                     newseg.xmit = 0;
-                    lock (sendlock)
+                    lock (snd_bufLock)
                     {
-                        sendList.Add(newseg);
+                        snd_buf.AddLast(newseg);
                     }
 
                     snd_nxt++;
@@ -791,12 +623,12 @@ namespace System.Net.Sockets.Kcp
                 rtomin = 0;
             }
 
-            lock (sendlock)
+            lock (snd_bufLock)
             {
                 // flush data segments
-                for (int i = 0; i < sendList.Count; i++)
+                foreach (var item in snd_buf)
                 {
-                    var segment = sendList[i];
+                    var segment = item;
                     var needsend = false;
                     var debug = Itimediff(current_, segment.resendts);
                     if (0 == segment.xmit)
@@ -1066,84 +898,32 @@ namespace System.Net.Sockets.Kcp
         /// get how many packet is waiting to be sent
         /// </summary>
         /// <returns></returns>
-        public int WaitSnd => sendList.Count + sendWaitQ.Count;
+        public int WaitSnd => snd_buf.Count + snd_queue.Count;
 
-        void Parse_una(uint una)
-        {
-            /// 删除给定时间之前的片段。保留之后的片段
-            lock (sendlock)
-            {
-                var count = 0;
+        
 
-                foreach (var seg in sendList)
-                {
-                    if (Itimediff(una, seg.sn) > 0)
-                    {
-                        KcpSegment.FreeHGlobal(seg);
-                        count++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                ///删除复杂度O(N) 一次性删除 sendList 的数据结构仍待思考暂用list
-                if (count > 0)
-                {
-                    sendList.RemoveRange(0, count);
-                }
-            }
-            
-        }
-
-        void Parse_ack(uint sn)
-        {
-
-            if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
-            {
-                return;
-            }
-
-            lock (sendlock)
-            {
-                for (int i = 0; i < sendList.Count; i++)
-                {
-                    var seg = sendList[i];
-                    if (sn == seg.sn)
-                    {
-                        sendList.Remove(seg);
-                        KcpSegment.FreeHGlobal(seg);
-                        break;
-                    }
-
-                    if (Itimediff(sn, seg.sn) < 0)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
+        
 
         void Parse_data(KcpSegment newseg)
         {
             var sn = newseg.sn;
             
-            lock (recvlock)
+            lock (rcv_bufLock)
             {
                 if (Itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || Itimediff(sn, rcv_nxt) < 0)
                 {
                     return;
                 }
 
-                var n = recvList.Count - 1;
+                var n = rcv_buf.Count - 1;
                 var after_idx = -1;
                 var repeat = false;
 
                 ///检查是否重复消息和插入位置
-                for (var i = n; i >= 0; i--)
+                LinkedListNode<KcpSegment> p;
+                for (p = rcv_buf.Last; p != null; p = p.Previous)
                 {
-                    var seg = recvList[i];
+                    var seg = p.Value;
                     if (seg.sn == sn)
                     {
                         repeat = true;
@@ -1152,21 +932,21 @@ namespace System.Net.Sockets.Kcp
 
                     if (Itimediff(sn, seg.sn) > 0)
                     {
-                        after_idx = i;
                         break;
                     }
                 }
 
                 if (!repeat)
                 {
-                    if (after_idx == -1)
+                    if (p == null)
                     {
-                        recvList.Insert(0, newseg);
+                        rcv_buf.AddFirst(newseg);
                     }
                     else
                     {
-                        recvList.Insert(after_idx + 1, newseg);
+                        rcv_buf.AddAfter(p, newseg);
                     }
+                    
                 }
                 else
                 {
@@ -1174,7 +954,7 @@ namespace System.Net.Sockets.Kcp
                 }
             }
 
-            MoveRecvAvailableDate();
+            Move_Rcv_buf_2_Rcv_queue();
 
         }
 
@@ -1185,11 +965,11 @@ namespace System.Net.Sockets.Kcp
                 return;
             }
 
-            lock (sendlock)
+            lock (snd_bufLock)
             {
-                for (int i = 0; i < sendList.Count; i++)
+                foreach (var item in snd_buf)
                 {
-                    var seg = sendList[i];
+                    var seg = item;
                     if (Itimediff(sn, seg.sn) < 0)
                     {
                         break;
@@ -1202,77 +982,14 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        /// <summary>
-        /// move available data from rcv_buf -> rcv_queue
-        /// </summary>
-        void MoveRecvAvailableDate()
-        {
-            lock (recvlock)
-            {
-                int count = 0;
-                foreach (var seg in recvList)
-                {
-                    if (seg.sn == rcv_nxt && recvWaitList.Count < rcv_wnd)
-                    {
-                        lock (recvWaitlock)
-                        {
-                            recvWaitList.Add(seg);
-                        }
+        
 
-                        rcv_nxt++;
-                        count++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (count > 0)
-                {
-                    recvList.RemoveRange(0, count);
-                }
-            }
-        }
-
-        /// <summary>
-        /// update ack.
-        /// </summary>
-        /// <param name="rtt"></param>
-        void Update_ack(int rtt)
-        {
-            if (0 == rx_srtt)
-            {
-                rx_srtt = (uint)rtt;
-                rx_rttval = (uint)rtt / 2;
-            }
-            else
-            {
-                var delta = (int)((uint)rtt - rx_srtt);
-
-                if (0 > delta)
-                {
-                    delta = -delta;
-                }
-
-                rx_rttval = (3 * rx_rttval + (uint)delta) / 4;
-                rx_srtt = (uint)((7 * rx_srtt + rtt) / 8);
-
-                if (rx_srtt < 1)
-                {
-                    rx_srtt = 1;
-                }
-            }
-
-            var rto = rx_srtt + Max(interval, 4 * rx_rttval);
-
-            rx_rto = Ibound(rx_minrto, rto, IKCP_RTO_MAX);
-        }
+        
 
         ushort Wnd_unused()
         {
             ///此处没有加锁，所以不要内联变量，否则可能导致 判断变量和赋值变量不一致
-            int waitCount = recvWaitList.Count;
+            int waitCount = rcv_queue.Count;
 
             if (waitCount < rcv_wnd)
             {
@@ -1373,10 +1090,328 @@ namespace System.Net.Sockets.Kcp
         public Kcp KCPRemote;
     }
 
+    public partial class Kcp
+    {
+        static uint Ibound(uint lower, uint middle, uint upper)
+        {
+            return Min(Max(lower, middle), upper);
+        }
+
+        public int stream;
+
+        /// <summary>
+        /// user/upper level recv: returns size, returns below zero for EAGAIN
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public int Recv(Span<byte> buffer)
+        {
+            if (0 == rcv_queue.Count)
+            {
+                return -1;
+            }
+
+            var peekSize = PeekSize();
+            if (peekSize < 0)
+            {
+                return -2;
+            }
+
+            if (peekSize > buffer.Length)
+            {
+                return -3;
+            }
+
+            var recover = false;
+            if (rcv_queue.Count >= rcv_wnd)
+            {
+                recover = true;
+            }
+
+            #region merge fragment.
+            /// merge fragment.
+
+            var recvLength = 0;
+            lock (rcv_queueLock)
+            {
+                var count = 0;
+                foreach (var seg in rcv_queue)
+                {
+                    seg.data.CopyTo(buffer.Slice(recvLength));
+                    recvLength += (int)seg.len;
+
+                    count++;
+                    int frg = seg.frg;
+
+                    KcpSegment.FreeHGlobal(seg);
+                    if (frg == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (count > 0)
+                {
+                    rcv_queue.RemoveRange(0, count);
+                }
+            }
+
+            #endregion
+
+            Move_Rcv_buf_2_Rcv_queue();
+
+            #region fast recover
+            /// fast recover
+            if (rcv_queue.Count < rcv_wnd && recover)
+            {
+                // ready to send back IKCP_CMD_WINS in ikcp_flush
+                // tell remote my window size
+                probe |= IKCP_ASK_TELL;
+            }
+            #endregion
+
+
+            return recvLength;
+        }
+
+        /// <summary>
+        /// move available data from rcv_buf -> rcv_queue
+        /// </summary>
+        void Move_Rcv_buf_2_Rcv_queue()
+        {
+            lock (rcv_bufLock)
+            {
+                while (rcv_buf.Count > 0)
+                {
+                    var seg = rcv_buf.First.Value;
+                    if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
+                    {
+                        rcv_buf.RemoveFirst();
+                        lock (rcv_queueLock)
+                        {
+                            rcv_queue.Add(seg);
+                        }
+
+                        rcv_nxt++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// check the size of next message in the recv queue
+        /// </summary>
+        /// <returns></returns>
+        public int PeekSize()
+        {
+
+            if (rcv_queue.Count == 0)
+            {
+                ///没有可用包
+                return -1;
+            }
+
+            var seq = rcv_queue[0];
+
+            if (seq.frg == 0)
+            {
+                return (int)seq.len;
+            }
+
+            if (rcv_queue.Count < seq.frg + 1)
+            {
+                ///没有足够的包
+                return -1;
+            }
+
+            lock (rcv_queueLock)
+            {
+                uint length = 0;
+
+                foreach (var item in rcv_queue)
+                {
+                    length += item.len;
+                    if (item.frg == 0)
+                    {
+                        break;
+                    }
+                }
+
+                return (int)length;
+            }
+        }
+
+        /// <summary>
+        /// user/upper level send, returns below zero for error
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public int Send(Span<byte> buffer)
+        {
+            if (mss <= 0)
+            {
+                throw new InvalidOperationException($" mss <= 0 ");
+            }
+
+
+            if (buffer.Length == 0)
+            {
+                return -1;
+            }
+            var offset = 0;
+            var count = 0;
+
+            #region append to previous segment in streaming mode (if possible)
+            /// 基于线程安全和数据结构的等原因,移除了追加数据到最后一个包行为。
+            #endregion
+
+            #region fragment
+            
+            if (buffer.Length <= mss)
+            {
+                count = 1;
+            }
+            else
+            {
+                count = (int)(buffer.Length + mss - 1) / (int)mss;
+            }
+
+            if (count > IKCP_WND_RCV)
+            {
+                return -2;
+            }
+
+            if (count == 0)
+            {
+                count = 1;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var size = 0;
+                if (buffer.Length - offset > mss)
+                {
+                    size = (int)mss;
+                }
+                else
+                {
+                    size = buffer.Length - offset;
+                }
+
+                var seg = KcpSegment.AllocHGlobal(size);
+                buffer.Slice(offset, size).CopyTo(seg.data);
+                offset += size;
+                seg.frg = (byte)(count - i - 1);
+                snd_queue.Enqueue(seg);
+            }
+
+            #endregion
+
+
+            return 0;
+        }
+
+        /// <summary>
+        /// update ack.
+        /// </summary>
+        /// <param name="rtt"></param>
+        void Update_ack(int rtt)
+        {
+            if (rx_srtt == 0)
+            {
+                rx_srtt = (uint)rtt;
+                rx_rttval = (uint)rtt / 2;
+            }
+            else
+            {
+                int delta = (int)((uint)rtt - rx_srtt);
+
+                if (delta < 0)
+                {
+                    delta = -delta;
+                }
+
+                rx_rttval = (3 * rx_rttval + (uint)delta) / 4;
+                rx_srtt = (uint)((7 * rx_srtt + rtt) / 8);
+
+                if (rx_srtt < 1)
+                {
+                    rx_srtt = 1;
+                }
+            }
+
+            var rto = rx_srtt + Max(interval, 4 * rx_rttval);
+
+            rx_rto = Ibound(rx_minrto, rto, IKCP_RTO_MAX);
+        }
+
+        void Shrink_buf()
+        {
+            lock (snd_bufLock)
+            {
+                snd_una = snd_buf.Count > 0 ? snd_buf.First.Value.sn : snd_nxt;
+            }
+        }
+        
+        void Parse_ack(uint sn)
+        {
+            if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
+            {
+                return;
+            }
+
+            lock (snd_bufLock)
+            {
+                for (var p = snd_buf.First; p !=null; p = p.Next)
+                {
+                    var seg = p.Value;
+                    if (sn == seg.sn)
+                    {
+                        snd_buf.Remove(p);
+                        KcpSegment.FreeHGlobal(seg);
+                        break;
+                    }
+
+                    if (Itimediff(sn, seg.sn) < 0)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        void Parse_una(uint una)
+        {
+            /// 删除给定时间之前的片段。保留之后的片段
+            lock (snd_bufLock)
+            {
+                while (snd_buf.First != null)
+                {
+                    var seg = snd_buf.First.Value;
+                    if (Itimediff(una, seg.sn) > 0)
+                    {
+                        KcpSegment.FreeHGlobal(seg);
+                        snd_buf.RemoveFirst();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+        }
+    }
+
 
     public static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
     {
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ConvertTime(this in DateTime time)
         {
             return (uint)(Convert.ToInt64(time.Subtract(utc_time).TotalMilliseconds) & 0xffffffff);
