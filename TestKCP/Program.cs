@@ -50,7 +50,7 @@ namespace TestKCP
             handle1.Out += buffer =>
             {
                 var next = random.Next(100);
-                if (next >= 0)///随机丢包
+                if (next >= 5)///随机丢包
                 {
                     //Console.WriteLine($"11------Thread[{Thread.CurrentThread.ManagedThreadId}]");
                     Task.Run(() =>

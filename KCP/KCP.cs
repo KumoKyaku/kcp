@@ -206,213 +206,7 @@ namespace System.Net.Sockets.Kcp
 
         
 
-        /// <summary>
-        /// when you received a low level packet (eg. UDP packet), call it
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public int Input(Span<byte> data)
-        {
-            if (data.Length < IKCP_OVERHEAD)
-            {
-                return -1;
-            }
-
-            var offset = 0;
-            int flag = 0;
-            uint maxack = 0;
-            while (true)
-            {
-                uint ts = 0;
-                uint sn = 0;
-                uint length = 0;
-                uint una = 0;
-                uint conv_ = 0;
-                ushort wnd = 0;
-                byte cmd = 0;
-                byte frg = 0;
-
-                if (data.Length - offset < IKCP_OVERHEAD)
-                {
-                    break;
-                }
-
-                if (IsLittleEndian)
-                {
-                    conv_ = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
-                    offset += 4;
-
-                    if (conv != conv_)
-                    {
-                        return -1;
-                    }
-
-                    cmd = data[offset];
-                    offset += 1;
-                    frg = data[offset];
-                    offset += 1;
-                    wnd = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(offset));
-                    offset += 2;
-
-                    ts = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
-                    offset += 4;
-                    sn = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
-                    offset += 4;
-                    una = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
-                    offset += 4;
-                    length = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
-                    offset += 4;
-                }
-                else
-                {
-                    conv_ = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
-                    offset += 4;
-
-                    if (conv != conv_)
-                    {
-                        return -1;
-                    }
-
-                    cmd = data[offset];
-                    offset += 1;
-                    frg = data[offset];
-                    offset += 1;
-                    wnd = BinaryPrimitives.ReadUInt16BigEndian(data.Slice(offset));
-                    offset += 2;
-
-                    ts = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
-                    offset += 4;
-                    sn = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
-                    offset += 4;
-                    una = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
-                    offset += 4;
-                    length = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
-                    offset += 4;
-                }
-                
-
-                if (data.Length - offset < length)
-                {
-                    return -2;
-                }
-
-                switch (cmd)
-                {
-                    case IKCP_CMD_PUSH:
-                    case IKCP_CMD_ACK:
-                    case IKCP_CMD_WASK:
-                    case IKCP_CMD_WINS:
-                        break;
-                    default:
-                        return -3;
-                }
-
-                rmt_wnd = wnd;
-                Parse_una(una);
-                Shrink_buf();
-
-                if (IKCP_CMD_ACK == cmd)
-                {
-                    if (Itimediff(current, ts) >= 0)
-                    {
-                        Update_ack(Itimediff(current, ts));
-                    }
-                    Parse_ack(sn);
-                    Shrink_buf();
-
-                    if (flag == 0)
-                    {
-                        flag = 1;
-                        maxack = sn;
-                    }
-                    else if (Itimediff(sn, maxack) > 0)
-                    {
-                        maxack = sn;
-                    }
-
-                }
-                else if (IKCP_CMD_PUSH == cmd)
-                {
-                    if (Itimediff(sn, rcv_nxt + rcv_wnd) < 0)
-                    {
-                        acklist.Enqueue((sn, ts));
-
-                        if (Itimediff(sn, rcv_nxt) >= 0)
-                        {
-                            var seg = KcpSegment.AllocHGlobal((int)length);
-                            seg.conv = conv_;
-                            seg.cmd = cmd;
-                            seg.frg = frg;
-                            seg.wnd = wnd;
-                            seg.ts = ts;
-                            seg.sn = sn;
-                            seg.una = una;
-                            
-
-                            if (length > 0)
-                            {
-                                data.Slice(offset).CopyTo(seg.data);
-                            }
-
-                            Parse_data(seg);
-                        }
-                    }
-                }
-                else if (IKCP_CMD_WASK == cmd)
-                {
-                    // ready to send back IKCP_CMD_WINS in Ikcp_flush
-                    // tell remote my window size
-                    probe |= IKCP_ASK_TELL;
-                }
-                else if (IKCP_CMD_WINS == cmd)
-                {
-                    // do nothing
-                }
-                else
-                {
-                    return -3;
-                }
-
-                offset += (int)length;
-            }
-
-            if (flag != 0)
-            {
-                Parse_fastack(maxack);
-            }
-
-            if (Itimediff(this.snd_una, snd_una) > 0)
-            {
-                if (cwnd < rmt_wnd)
-                {
-                    var mss_ = mss;
-                    if (cwnd < ssthresh)
-                    {
-                        cwnd++;
-                        incr += mss_;
-                    }
-                    else
-                    {
-                        if (incr < mss_)
-                        {
-                            incr = mss_;
-                        }
-                        incr += (mss_ * mss_) / incr + (mss_ / 16);
-                        if ((cwnd + 1) * mss_ <= incr)
-                        {
-                            cwnd++;
-                        }
-                    }
-                    if (cwnd > rmt_wnd)
-                    {
-                        cwnd = rmt_wnd;
-                        incr = rmt_wnd * mss_;
-                    }
-                }
-            }
-
-            return 0;
-        }
+        
 
         
 
@@ -904,103 +698,15 @@ namespace System.Net.Sockets.Kcp
 
         
 
-        void Parse_data(KcpSegment newseg)
-        {
-            var sn = newseg.sn;
-            
-            lock (rcv_bufLock)
-            {
-                if (Itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || Itimediff(sn, rcv_nxt) < 0)
-                {
-                    return;
-                }
+        
 
-                var n = rcv_buf.Count - 1;
-                var after_idx = -1;
-                var repeat = false;
-
-                ///检查是否重复消息和插入位置
-                LinkedListNode<KcpSegment> p;
-                for (p = rcv_buf.Last; p != null; p = p.Previous)
-                {
-                    var seg = p.Value;
-                    if (seg.sn == sn)
-                    {
-                        repeat = true;
-                        break;
-                    }
-
-                    if (Itimediff(sn, seg.sn) > 0)
-                    {
-                        break;
-                    }
-                }
-
-                if (!repeat)
-                {
-                    if (p == null)
-                    {
-                        rcv_buf.AddFirst(newseg);
-                    }
-                    else
-                    {
-                        rcv_buf.AddAfter(p, newseg);
-                    }
-                    
-                }
-                else
-                {
-                    KcpSegment.FreeHGlobal(newseg);
-                }
-            }
-
-            Move_Rcv_buf_2_Rcv_queue();
-
-        }
-
-        void Parse_fastack(uint sn)
-        {
-            if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
-            {
-                return;
-            }
-
-            lock (snd_bufLock)
-            {
-                foreach (var item in snd_buf)
-                {
-                    var seg = item;
-                    if (Itimediff(sn, seg.sn) < 0)
-                    {
-                        break;
-                    }
-                    else if (sn != seg.sn)
-                    {
-                        seg.fastack++;
-                    }
-                }
-            }
-        }
+        
 
         
 
         
 
-        ushort Wnd_unused()
-        {
-            ///此处没有加锁，所以不要内联变量，否则可能导致 判断变量和赋值变量不一致
-            int waitCount = rcv_queue.Count;
-
-            if (waitCount < rcv_wnd)
-            {
-                /// fix https://github.com/skywind3000/kcp/issues/126
-                /// 实际上 rcv_wnd 不应该大于65535
-                var count = rcv_wnd - waitCount;
-                return (ushort)Min(count, ushort.MaxValue);
-            }
-
-            return 0;
-        }
+        
     }
     
     //extension 重构和新增加的部分
@@ -1404,6 +1110,309 @@ namespace System.Net.Sockets.Kcp
                 }
             }
 
+        }
+
+        void Parse_fastack(uint sn)
+        {
+            if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
+            {
+                return;
+            }
+
+            lock (snd_bufLock)
+            {
+                foreach (var item in snd_buf)
+                {
+                    var seg = item;
+                    if (Itimediff(sn, seg.sn) < 0)
+                    {
+                        break;
+                    }
+                    else if (sn != seg.sn)
+                    {
+                        seg.fastack++;
+                    }
+                }
+            }
+        }
+
+        void Parse_data(KcpSegment newseg)
+        {
+            var sn = newseg.sn;
+
+            lock (rcv_bufLock)
+            {
+                if (Itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || Itimediff(sn, rcv_nxt) < 0)
+                {
+                    KcpSegment.FreeHGlobal(newseg);
+                    return;
+                }
+                
+                var repeat = false;
+
+                ///检查是否重复消息和插入位置
+                LinkedListNode<KcpSegment> p;
+                for (p = rcv_buf.Last; p != null; p = p.Previous)
+                {
+                    var seg = p.Value;
+                    if (seg.sn == sn)
+                    {
+                        repeat = true;
+                        break;
+                    }
+
+                    if (Itimediff(sn, seg.sn) > 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (!repeat)
+                {
+                    if (p == null)
+                    {
+                        rcv_buf.AddFirst(newseg);
+                    }
+                    else
+                    {
+                        rcv_buf.AddAfter(p, newseg);
+                    }
+
+                }
+                else
+                {
+                    KcpSegment.FreeHGlobal(newseg);
+                }
+            }
+
+            Move_Rcv_buf_2_Rcv_queue();
+        }
+
+        /// <summary>
+        /// when you received a low level packet (eg. UDP packet), call it
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public int Input(Span<byte> data)
+        {
+            uint temp_una = snd_una;
+
+            if (data.Length < IKCP_OVERHEAD)
+            {
+                return -1;
+            }
+
+            var offset = 0;
+            int flag = 0;
+            uint maxack = 0;
+            while (true)
+            {
+                uint ts = 0;
+                uint sn = 0;
+                uint length = 0;
+                uint una = 0;
+                uint conv_ = 0;
+                ushort wnd = 0;
+                byte cmd = 0;
+                byte frg = 0;
+
+                if (data.Length - offset < IKCP_OVERHEAD)
+                {
+                    break;
+                }
+
+                if (IsLittleEndian)
+                {
+                    conv_ = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
+                    offset += 4;
+
+                    if (conv != conv_)
+                    {
+                        return -1;
+                    }
+
+                    cmd = data[offset];
+                    offset += 1;
+                    frg = data[offset];
+                    offset += 1;
+                    wnd = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(offset));
+                    offset += 2;
+
+                    ts = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
+                    offset += 4;
+                    sn = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
+                    offset += 4;
+                    una = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
+                    offset += 4;
+                    length = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
+                    offset += 4;
+                }
+                else
+                {
+                    conv_ = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
+                    offset += 4;
+
+                    if (conv != conv_)
+                    {
+                        return -1;
+                    }
+
+                    cmd = data[offset];
+                    offset += 1;
+                    frg = data[offset];
+                    offset += 1;
+                    wnd = BinaryPrimitives.ReadUInt16BigEndian(data.Slice(offset));
+                    offset += 2;
+
+                    ts = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
+                    offset += 4;
+                    sn = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
+                    offset += 4;
+                    una = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
+                    offset += 4;
+                    length = BinaryPrimitives.ReadUInt32BigEndian(data.Slice(offset));
+                    offset += 4;
+                }
+                
+
+                if (data.Length - offset < length || (int)length < 0)
+                {
+                    return -2;
+                }
+
+                switch (cmd)
+                {
+                    case IKCP_CMD_PUSH:
+                    case IKCP_CMD_ACK:
+                    case IKCP_CMD_WASK:
+                    case IKCP_CMD_WINS:
+                        break;
+                    default:
+                        return -3;
+                }
+
+                rmt_wnd = wnd;
+                Parse_una(una);
+                Shrink_buf();
+
+                if (IKCP_CMD_ACK == cmd)
+                {
+                    if (Itimediff(current, ts) >= 0)
+                    {
+                        Update_ack(Itimediff(current, ts));
+                    }
+                    Parse_ack(sn);
+                    Shrink_buf();
+
+                    if (flag == 0)
+                    {
+                        flag = 1;
+                        maxack = sn;
+                    }
+                    else if (Itimediff(sn, maxack) > 0)
+                    {
+                        maxack = sn;
+                    }
+
+                }
+                else if (IKCP_CMD_PUSH == cmd)
+                {
+                    if (Itimediff(sn, rcv_nxt + rcv_wnd) < 0)
+                    {
+                        ///instead of ikcp_ack_push
+                        acklist.Enqueue((sn, ts));
+
+                        if (Itimediff(sn, rcv_nxt) >= 0)
+                        {
+                            var seg = KcpSegment.AllocHGlobal((int)length);
+                            seg.conv = conv_;
+                            seg.cmd = cmd;
+                            seg.frg = frg;
+                            seg.wnd = wnd;
+                            seg.ts = ts;
+                            seg.sn = sn;
+                            seg.una = una;
+                            //seg.len = length;  长度在分配时确定，不能改变
+
+                            if (length > 0)
+                            {
+                                data.Slice(offset).CopyTo(seg.data);
+                            }
+
+                            Parse_data(seg);
+                        }
+                    }
+                }
+                else if (IKCP_CMD_WASK == cmd)
+                {
+                    // ready to send back IKCP_CMD_WINS in Ikcp_flush
+                    // tell remote my window size
+                    probe |= IKCP_ASK_TELL;
+                }
+                else if (IKCP_CMD_WINS == cmd)
+                {
+                    // do nothing
+                }
+                else
+                {
+                    return -3;
+                }
+
+                offset += (int)length;
+            }
+
+            if (flag != 0)
+            {
+                Parse_fastack(maxack);
+            }
+
+            if (Itimediff(this.snd_una, temp_una) > 0)
+            {
+                if (cwnd < rmt_wnd)
+                {
+                    var mss_ = mss;
+                    if (cwnd < ssthresh)
+                    {
+                        cwnd++;
+                        incr += mss_;
+                    }
+                    else
+                    {
+                        if (incr < mss_)
+                        {
+                            incr = mss_;
+                        }
+                        incr += (mss_ * mss_) / incr + (mss_ / 16);
+                        if ((cwnd + 1) * mss_ <= incr)
+                        {
+                            cwnd++;
+                        }
+                    }
+                    if (cwnd > rmt_wnd)
+                    {
+                        cwnd = rmt_wnd;
+                        incr = rmt_wnd * mss_;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        ushort Wnd_unused()
+        {
+            ///此处没有加锁，所以不要内联变量，否则可能导致 判断变量和赋值变量不一致
+            int waitCount = rcv_queue.Count;
+
+            if (waitCount < rcv_wnd)
+            {
+                /// fix https://github.com/skywind3000/kcp/issues/126
+                /// 实际上 rcv_wnd 不应该大于65535
+                var count = rcv_wnd - waitCount;
+                return (ushort)Min(count, ushort.MaxValue);
+            }
+
+            return 0;
         }
     }
 
