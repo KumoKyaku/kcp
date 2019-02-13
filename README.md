@@ -18,7 +18,8 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 - 对于output回调和TryRecv函数。使用RentBuffer回调，从外部分配内存。请参考IMemoryOwner用法。
 - 支持`Span<byte>`
 
-
+# 测试：
+[同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。](Image/deadlock.jpg)
 
 # 相对C版的一些变化：
 
