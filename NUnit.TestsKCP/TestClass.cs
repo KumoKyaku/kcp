@@ -3,14 +3,14 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets.Protocol;
+using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NUnit.TestsKCP
 {
-    public class Handle : IKCPCallback
+    public class Handle : IKcpCallback
     {
         public void Output(ReadOnlySpan<byte> buffer)
         {
@@ -142,9 +142,11 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
             var handle2 = new Handle();
 
             const int conv = 123;
-            var kcp1 = new KCP(conv, handle1);
-            var kcp2 = new KCP(conv, handle2);
+            var kcp1 = new Kcp(conv, handle1);
+            var kcp2 = new Kcp(conv, handle2);
 
+            ///kcp设置
+            ///https://github.com/skywind3000/kcp/issues/39#issuecomment-244592173
             kcp1.NoDelay(1, 10, 2, 1);//fast
             kcp1.WndSize(64, 64);
             kcp1.SetMtu(512);
@@ -158,7 +160,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
             handle1.Out += buffer =>
             {
                 var next = random.Next(100);
-                if (next >= 30)///随机丢包
+                if (next >= 5)///随机丢包
                 {
                     kcp2.Input(buffer); 
                 }
@@ -201,7 +203,15 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                     while (true)
                     {
                         kcp1.Update(DateTime.UtcNow);
-
+                        int len;
+                        while ((len = kcp1.PeekSize()) > 0)
+                        {
+                            var buffer = kcp1.CreateBuffer(len);
+                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            {
+                                handle1.Receive(buffer);
+                            }
+                        }
                         await Task.Delay(5);
                     }
                 }
@@ -219,6 +229,25 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                     while (true)
                     {
                         kcp2.Update(DateTime.UtcNow);
+                        int len;
+                        //while ((len = kcp2.PeekSize()) > 0)
+                        //{
+                        //    var buffer = kcp2.CreateBuffer(len);
+                        //    if (kcp2.Recv(buffer.Memory.Span) >= 0)
+                        //    {
+                        //        handle2.Receive(buffer);
+                        //    }
+                        //}
+
+                        do
+                        {
+                            var (buffer, avalidSzie) = kcp2.TryRecv();
+                            len = avalidSzie;
+                            if (buffer != null)
+                            {
+                                handle2.Receive(buffer);
+                            }
+                        } while (len > 0);
 
                         await Task.Delay(5);
                     }

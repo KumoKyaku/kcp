@@ -3,7 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets.Protocol;
+using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +21,7 @@ namespace TestKCP
             }
         }
 
+
         static void Main(string[] args)
         {
             Console.WriteLine(ShowThread);
@@ -30,11 +31,8 @@ namespace TestKCP
             var handle2 = new Handle();
 
             const int conv = 123;
-            var kcp1 = new KCP(conv, handle1);
-            var kcp2 = new KCP(conv, handle2);
-
-            kcp1.KCPRemote = kcp2;
-            kcp2.KCPRemote = kcp1;
+            var kcp1 = new Kcp(conv, handle1);
+            var kcp2 = new Kcp(conv, handle2);
             
             kcp1.NoDelay(1, 10, 2, 1);//fast
             kcp1.WndSize(64, 64);
@@ -49,7 +47,7 @@ namespace TestKCP
             handle1.Out += buffer =>
             {
                 var next = random.Next(100);
-                if (next >= 50)///随机丢包
+                if (next >= 15)///随机丢包
                 {
                     //Console.WriteLine($"11------Thread[{Thread.CurrentThread.ManagedThreadId}]");
                     Task.Run(() =>
@@ -124,6 +122,17 @@ namespace TestKCP
                     while (true)
                     {
                         kcp1.Update(DateTime.UtcNow);
+
+                        int len;
+                        while ((len = kcp1.PeekSize()) > 0)
+                        {
+                            var buffer = kcp1.CreateBuffer(len);
+                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            {
+                                handle1.Receive(buffer);
+                            }
+                        }
+
                         await Task.Delay(5);
                         updateCount++;
                         if (updateCount % 1000 == 0)
@@ -147,6 +156,21 @@ namespace TestKCP
                     while (true)
                     {
                         kcp2.Update(DateTime.UtcNow);
+
+                        //var utcNow = DateTime.UtcNow;
+                        //var res = kcp2.Check(utcNow);
+
+                        int len;
+                        do
+                        {
+                            var (buffer, avalidSzie) = kcp2.TryRecv();
+                            len = avalidSzie;
+                            if (buffer != null)
+                            {
+                                handle2.Receive(buffer);
+                            }
+                        } while (len > 0);
+
                         await Task.Delay(5);
                         updateCount++;
                         if (updateCount % 1000 == 0)
@@ -162,6 +186,13 @@ namespace TestKCP
             });
 
             kcp1.Send(sendbyte);
+
+            while (true)
+            {
+                Thread.Sleep(1000);
+                GC.Collect();
+            }
+
             Console.ReadLine();
         }
     }

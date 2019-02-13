@@ -8,12 +8,12 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 using System.Linq;
 using System.Buffers.Binary;
 
-namespace System.Net.Sockets.Protocol
+namespace System.Net.Sockets.Kcp
 {
     /// <summary>
     /// KCP回调
     /// </summary>
-    public interface IKCPCallback
+    public interface IKcpCallback
     {
         /// <summary>
         /// kcp 发送方向输出
@@ -22,12 +22,25 @@ namespace System.Net.Sockets.Protocol
         /// <returns>不需要返回值</returns>
         /// <remarks>因为kcp需要丢包重传，所以无法交出发送缓冲区的控制权/remarks>
         void Output(ReadOnlySpan<byte> buffer);
-        void Receive(BufferOwner buffer);
+        
         /// <summary>
         /// 外部提供缓冲区
         /// <para></para>
         /// 注意 BufferOwner.Memory.Length 需要等于 needLenght。
         /// </summary>
         BufferOwner RentBuffer(int lenght);
+    }
+
+    public interface IKcpSetting
+    {
+        int Interval(int interval_);
+        int NoDelay(int nodelay_, int interval_, int resend_, int nc_);
+        int SetMtu(int mtu_);
+        int WndSize(int sndwnd, int rcvwnd);
+    }
+
+    public interface IKcpUpdate
+    {
+        void Update(in DateTime time);
     }
 }
