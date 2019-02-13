@@ -22,7 +22,7 @@ namespace System.Net.Sockets.Kcp
         /// <returns>不需要返回值</returns>
         /// <remarks>因为kcp需要丢包重传，所以无法交出发送缓冲区的控制权/remarks>
         void Output(ReadOnlySpan<byte> buffer);
-        void Receive(BufferOwner buffer);
+        
         /// <summary>
         /// 外部提供缓冲区
         /// <para></para>
