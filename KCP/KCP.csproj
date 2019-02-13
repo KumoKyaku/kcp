@@ -1,8 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7.2</LangVersion>
+    <RootNamespace>System.Net.Sockets.Kcp</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.0.0</Version>
+    <Description>Kcp C# 版</Description>
+    <PackageProjectUrl>https://github.com/KumoKyaku/KCP</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/KumoKyaku/KCP/blob/master/LICENSE</PackageLicenseUrl>
+    <Authors>云却</Authors>
+    <Product>Kcp</Product>
+    <Copyright>Copyright (c) 2019 云却</Copyright>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PackageId>Kcp</PackageId>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

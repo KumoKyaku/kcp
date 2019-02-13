@@ -203,7 +203,15 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                     while (true)
                     {
                         kcp1.Update(DateTime.UtcNow);
-
+                        int len;
+                        while ((len = kcp1.PeekSize()) > 0)
+                        {
+                            var buffer = kcp1.CreateBuffer(len);
+                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            {
+                                handle1.Receive(buffer);
+                            }
+                        }
                         await Task.Delay(5);
                     }
                 }
@@ -221,6 +229,25 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                     while (true)
                     {
                         kcp2.Update(DateTime.UtcNow);
+                        int len;
+                        //while ((len = kcp2.PeekSize()) > 0)
+                        //{
+                        //    var buffer = kcp2.CreateBuffer(len);
+                        //    if (kcp2.Recv(buffer.Memory.Span) >= 0)
+                        //    {
+                        //        handle2.Receive(buffer);
+                        //    }
+                        //}
+
+                        do
+                        {
+                            var (buffer, avalidSzie) = kcp2.TryRecv();
+                            len = avalidSzie;
+                            if (buffer != null)
+                            {
+                                handle2.Receive(buffer);
+                            }
+                        } while (len > 0);
 
                         await Task.Delay(5);
                     }

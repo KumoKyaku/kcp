@@ -33,7 +33,7 @@ namespace System.Net.Sockets.Kcp
             {
                 ///清零    不知道是不是有更快的清0方法？
                 Span<byte> span = new Span<byte>(intPtr.ToPointer(), total);
-                span.Fill(0);
+                span.Clear();
 
                 return new KcpSegment((byte*)intPtr.ToPointer(), (uint)appendDateSize);
             }
