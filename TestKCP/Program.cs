@@ -1,12 +1,10 @@
-﻿using NUnit.TestsKCP;
-using System;
+﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NUnit.TestsKCP;
 
 namespace TestKCP
 {
@@ -33,7 +31,7 @@ namespace TestKCP
             const int conv = 123;
             var kcp1 = new Kcp(conv, handle1);
             var kcp2 = new Kcp(conv, handle2);
-            
+
             kcp1.NoDelay(1, 10, 2, 1);//fast
             kcp1.WndSize(64, 64);
             kcp1.SetMtu(512);
@@ -55,7 +53,7 @@ namespace TestKCP
                         //Console.WriteLine($"12------Thread[{Thread.CurrentThread.ManagedThreadId}]");
                         kcp2.Input(buffer);
                     });
-                    
+
                 }
                 else
                 {
@@ -92,7 +90,7 @@ namespace TestKCP
                         {
                             Console.WriteLine($"kcp  echo----{count}");
                         }
-                        var res= kcp1.Send(buffer.Memory.Span);
+                        var res = kcp1.Send(buffer.Memory.Span);
                         if (res != 0)
                         {
                             Console.WriteLine($"kcp send error");

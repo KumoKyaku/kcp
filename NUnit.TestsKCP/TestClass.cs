@@ -1,12 +1,10 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace NUnit.TestsKCP
 {
@@ -162,13 +160,13 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 var next = random.Next(100);
                 if (next >= 5)///随机丢包
                 {
-                    kcp2.Input(buffer); 
+                    kcp2.Input(buffer);
                 }
             };
 
             handle2.Out += buffer =>
             {
-                 kcp1.Input(buffer);
+                kcp1.Input(buffer);
             };
 
             int end = 0;
@@ -187,7 +185,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                             kcp1.Send(buffer.Memory.Span);
                         }
                     }
-                    
+
                 }
             };
 
@@ -219,7 +217,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 {
                     e.ToString();
                 }
-                
+
             });
 
             Task.Run(async () =>

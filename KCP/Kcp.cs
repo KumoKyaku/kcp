@@ -205,7 +205,7 @@ namespace System.Net.Sockets.Kcp
             var res = callbackHandle?.RentBuffer(size);
             if (res == null)
             {
-                return new KCPInnerBuffer(size);
+                return new KcpInnerBuffer(size);
             }
             else
             {
@@ -219,7 +219,7 @@ namespace System.Net.Sockets.Kcp
             return res;
         }
 
-        internal protected class KCPInnerBuffer : BufferOwner
+        internal protected class KcpInnerBuffer : BufferOwner
         {
             private readonly Memory<byte> _memory;
 
@@ -229,13 +229,13 @@ namespace System.Net.Sockets.Kcp
                 {
                     if (alreadyDisposed)
                     {
-                        throw new ObjectDisposedException(nameof(KCPInnerBuffer));
+                        throw new ObjectDisposedException(nameof(KcpInnerBuffer));
                     }
                     return _memory;
                 }
             }
 
-            public KCPInnerBuffer(int size)
+            public KcpInnerBuffer(int size)
             {
                 _memory = new Memory<byte>(new byte[size]);
             }
@@ -247,12 +247,12 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        public (BufferOwner buffer,int avalidSzie) TryRecv()
+        public (BufferOwner buffer, int avalidSzie) TryRecv()
         {
             if (rcv_queue.Count == 0)
             {
                 ///没有可用包
-                return (null,-1);
+                return (null, -1);
             }
 
             var peekSize = -1;
@@ -266,7 +266,7 @@ namespace System.Net.Sockets.Kcp
             if (rcv_queue.Count < seq.frg + 1)
             {
                 ///没有足够的包
-                return (null,-1);
+                return (null, -1);
             }
 
             lock (rcv_queueLock)
@@ -284,15 +284,15 @@ namespace System.Net.Sockets.Kcp
 
                 peekSize = (int)length;
             }
-            
+
             if (peekSize <= 0)
             {
-                return (null,-2);
+                return (null, -2);
             }
 
             var buffer = CreateBuffer(peekSize);
             var recvlength = UncheckRecv(buffer.Memory.Span);
-            return (buffer,recvlength);
+            return (buffer, recvlength);
         }
     }
 

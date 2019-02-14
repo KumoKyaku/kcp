@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28606.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KCP", "KCP\KCP.csproj", "{31DC268D-D2E0-4293-86A9-248B18D25C0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kcp", "KCP\Kcp.csproj", "{31DC268D-D2E0-4293-86A9-248B18D25C0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NUnit.TestsKCP", "NUnit.TestsKCP\NUnit.TestsKCP.csproj", "{8EDF4429-251A-416D-BB68-93F227191BCF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NUnit.TestsKcp", "NUnit.TestsKCP\NUnit.TestsKcp.csproj", "{8EDF4429-251A-416D-BB68-93F227191BCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestKCP", "TestKCP\TestKCP.csproj", "{54162384-D5AB-42DD-945E-9C29447628E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestKcp", "TestKCP\TestKcp.csproj", "{54162384-D5AB-42DD-945E-9C29447628E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

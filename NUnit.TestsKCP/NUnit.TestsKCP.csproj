@@ -66,9 +66,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\KCP\KCP.csproj">
+    <ProjectReference Include="..\KCP\Kcp.csproj">
       <Project>{31DC268D-D2E0-4293-86A9-248B18D25C0A}</Project>
-      <Name>KCP</Name>
+      <Name>Kcp</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

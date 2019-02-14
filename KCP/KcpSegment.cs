@@ -1,8 +1,5 @@
-﻿using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
+﻿using System.Buffers.Binary;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace System.Net.Sockets.Kcp
 {
@@ -50,7 +47,7 @@ namespace System.Net.Sockets.Kcp
                 Marshal.FreeHGlobal((IntPtr)seg.ptr);
             }
         }
-        
+
         /// 以下为本机使用的参数
         /// <summary>
         /// offset = 0
@@ -182,7 +179,7 @@ namespace System.Net.Sockets.Kcp
                 }
             }
         }
-        
+
         /// <summary>
         /// offset = <see cref="LocalOffset"/> + 5
         /// </summary>
@@ -245,7 +242,7 @@ namespace System.Net.Sockets.Kcp
                 }
             }
         }
-        
+
         /// <summary>
         /// <para> SendNumber? </para>
         /// offset = <see cref="LocalOffset"/> + 12
@@ -396,7 +393,7 @@ namespace System.Net.Sockets.Kcp
                     }
                 }
             }
-            
+
             return datelen;
         }
     }

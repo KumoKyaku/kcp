@@ -68,13 +68,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\KCP\KCP.csproj">
+    <ProjectReference Include="..\KCP\Kcp.csproj">
       <Project>{31DC268D-D2E0-4293-86A9-248B18D25C0A}</Project>
-      <Name>KCP</Name>
+      <Name>Kcp</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NUnit.TestsKCP\NUnit.TestsKCP.csproj">
+    <ProjectReference Include="..\NUnit.TestsKCP\NUnit.TestsKcp.csproj">
       <Project>{8EDF4429-251A-416D-BB68-93F227191BCF}</Project>
-      <Name>NUnit.TestsKCP</Name>
+      <Name>NUnit.TestsKcp</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
