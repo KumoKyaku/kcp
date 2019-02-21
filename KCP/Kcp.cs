@@ -298,30 +298,6 @@ namespace System.Net.Sockets.Kcp
 
     public partial class Kcp
     {
-        ///调试部分
-        ///死锁分析
-
-        [System.Diagnostics.Conditional("DEADLOCK")]
-        void TryInLock(string innerlock)
-        {
-            Console.WriteLine($"Thread[{Thread.CurrentThread.ManagedThreadId}] Try in  {innerlock}");
-        }
-
-        [System.Diagnostics.Conditional("DEADLOCK")]
-        void InLock(string innerlock)
-        {
-            Console.WriteLine($"Thread[{Thread.CurrentThread.ManagedThreadId}]     in  {innerlock}");
-        }
-
-        [System.Diagnostics.Conditional("DEADLOCK")]
-        void OutLock(string innerlock)
-        {
-            Console.WriteLine($"Thread[{Thread.CurrentThread.ManagedThreadId}]     Out {innerlock}");
-        }
-    }
-
-    public partial class Kcp
-    {
         static uint Ibound(uint lower, uint middle, uint upper)
         {
             return Min(Max(lower, middle), upper);

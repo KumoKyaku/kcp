@@ -4,7 +4,7 @@ using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.TestsKCP;
+using UnitTestProject1;
 
 namespace TestKCP
 {
@@ -40,7 +40,7 @@ namespace TestKCP
             kcp2.WndSize(64, 64);
             kcp2.SetMtu(512);
 
-            var sendbyte = Encoding.ASCII.GetBytes(TestClass.message);
+            var sendbyte = Encoding.ASCII.GetBytes(UnitTest1.message);
 
             handle1.Out += buffer =>
             {
@@ -86,7 +86,7 @@ namespace TestKCP
                     {
                         var str = Encoding.ASCII.GetString((byte*)p.Pointer, buffer.Memory.Length);
                         count++;
-                        if (TestClass.message == str)
+                        if (UnitTest1.message == str)
                         {
                             Console.WriteLine($"kcp  echo----{count}");
                         }

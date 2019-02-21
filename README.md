@@ -1,5 +1,9 @@
 # KCP C#版。
-目标框架dotnetstandard2.0。
+
+支持目标框架:  
+- dotnetstandard2.0
+- dotnetstandard1.1
+
 开箱即用。也可以使用Nuget 搜索KCP。
 
 # 链接：

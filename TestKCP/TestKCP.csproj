@@ -72,9 +72,9 @@
       <Project>{31DC268D-D2E0-4293-86A9-248B18D25C0A}</Project>
       <Name>Kcp</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NUnit.TestsKCP\NUnit.TestsKcp.csproj">
-      <Project>{8EDF4429-251A-416D-BB68-93F227191BCF}</Project>
-      <Name>NUnit.TestsKcp</Name>
+    <ProjectReference Include="..\UnitTestProject1\UnitTestProject1.csproj">
+      <Project>{84949d82-108d-4bc1-8c7f-77ce4458f6f4}</Project>
+      <Name>UnitTestProject1</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
