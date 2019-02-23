@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using static System.Math;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
@@ -13,7 +12,7 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public partial class Kcp : IKcpSetting, IKcpUpdate
+    public partial class Kcp : IKcpSetting, IKcpUpdate, IDisposable
     {
         /// 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -189,6 +188,135 @@ namespace System.Net.Sockets.Kcp
         /// <para>需要执行的操作  添加 插入 遍历 删除</para>
         /// </summary>
         LinkedList<KcpSegment> rcv_buf = new LinkedList<KcpSegment>();
+
+        #region IDisposable Support
+        private bool disposedValue = false; // 要检测冗余调用
+
+        /// <summary>
+        /// 是否正在释放
+        /// </summary>
+        private bool m_disposing = false;
+
+        protected bool CheckDispose()
+        {
+            if (m_disposing)
+            {
+                return true;
+            }
+
+            if (disposedValue)
+            {
+                throw new ObjectDisposedException(
+                    $"{nameof(Kcp)} [conv:{conv}]");
+            }
+
+            return false;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            try
+            {
+                m_disposing = true;
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        // 释放托管状态(托管对象)。
+                        callbackHandle = null;
+                        acklist = null;
+                        buffer = null;
+                    }
+
+                    // 释放未托管的资源(未托管的对象)并在以下内容中替代终结器。
+                    // 将大型字段设置为 null。
+                    void FreeCollection(IEnumerable<KcpSegment> collection)
+                    {
+                        if (collection == null)
+                        {
+                            return;
+                        }
+                        foreach (var item in collection)
+                        {
+                            try
+                            {
+                                KcpSegment.FreeHGlobal(item);
+                            }
+                            catch (Exception)
+                            {
+                                //理论上此处不会有任何异常
+                            }
+                        }
+                    }
+
+                    while (snd_queue != null &&
+                        (snd_queue.TryDequeue(out var segment)
+                        || !snd_queue.IsEmpty)
+                        )
+                    {
+                        try
+                        {
+                            KcpSegment.FreeHGlobal(segment);
+                        }
+                        catch (Exception)
+                        {
+                            //理论上这里没有任何异常；
+                        }
+                    }
+                    snd_queue = null;
+
+                    lock (snd_bufLock)
+                    {
+                        FreeCollection(snd_buf);
+                        snd_buf?.Clear();
+                        snd_buf = null;
+                    }
+
+                    lock (rcv_bufLock)
+                    {
+                        FreeCollection(rcv_buf);
+                        rcv_buf?.Clear();
+                        rcv_buf = null;
+                    }
+
+                    lock (rcv_queueLock)
+                    {
+                        FreeCollection(rcv_queue);
+                        rcv_queue?.Clear();
+                        rcv_queue = null;
+                    }
+
+
+                    disposedValue = true;
+                }
+            }
+            finally
+            {
+                m_disposing = false;
+            }
+
+        }
+
+        // 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
+        ~Kcp()
+        {
+            // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+            Dispose(false);
+        }
+
+        // 添加此代码以正确实现可处置模式。
+        /// <summary>
+        /// 释放不是严格线程安全的，尽量使用和Update相同的线程调用，
+        /// 或者等待析构时自动释放。
+        /// </summary>
+        public void Dispose()
+        {
+            // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+            Dispose(true);
+            // 如果在以上内容中替代了终结器，则取消注释以下行。
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 
     //extension 重构和新增加的部分
@@ -472,6 +600,12 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         public int Send(Span<byte> buffer)
         {
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
             if (mss <= 0)
             {
                 throw new InvalidOperationException($" mss <= 0 ");
@@ -709,6 +843,12 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         public int Input(Span<byte> data)
         {
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
             uint temp_una = snd_una;
 
             if (data.Length < IKCP_OVERHEAD)
@@ -966,6 +1106,12 @@ namespace System.Net.Sockets.Kcp
 
                 #region flush acknowledges
 
+                if (CheckDispose())
+                {
+                    //检查释放
+                    return;
+                }
+
                 while (acklist.TryDequeue(out var temp))
                 {
                     if (offset + IKCP_OVERHEAD > mtu)
@@ -1206,6 +1352,12 @@ namespace System.Net.Sockets.Kcp
         /// <param name="time">DateTime.UtcNow</param>
         public void Update(in DateTime time)
         {
+            if (CheckDispose())
+            {
+                //检查释放
+                return;
+            }
+
             current = time.ConvertTime();
 
             if (updated == 0)

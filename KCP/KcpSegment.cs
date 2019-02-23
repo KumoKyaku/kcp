@@ -7,8 +7,10 @@ namespace System.Net.Sockets.Kcp
     /// 调整了没存布局，直接拷贝块提升性能。
     /// <para>结构体保存内容只有一个指针，不用担心参数传递过程中的性能</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
+    /// <para>不要对没有初始化的KcpSegment(内部指针为0，所有属性都将指向位置区域) 进行任何赋值操作，可能导致内存损坏。
+    /// 出于性能考虑，没有对此项进行安全检查。</para>
     /// </summary>
-    public struct KcpSegment
+    internal struct KcpSegment
     {
         readonly unsafe byte* ptr;
         internal unsafe KcpSegment(byte* intPtr, uint appendDateSize)

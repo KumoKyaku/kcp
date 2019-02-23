@@ -277,5 +277,15 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
 
             task.Result.ToString();
         }
+
+
+        [TestMethod]
+        public void TestKcpSegmentFree()
+        {
+            //KcpSegment.FreeHGlobal(default);
+        }
+
+
+
     }
 }
