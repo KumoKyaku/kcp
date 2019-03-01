@@ -70,7 +70,7 @@ namespace System.Net.Sockets.Kcp
             rmt_wnd = IKCP_WND_RCV;
             mtu = IKCP_MTU_DEF;
             mss = mtu - IKCP_OVERHEAD;
-            buffer = new byte[(mtu + IKCP_OVERHEAD) * 3];
+            buffer = CreateBuffer(BufferNeedSize);
 
             rx_rto = IKCP_RTO_DEF;
             rx_minrto = IKCP_RTO_MIN;
@@ -114,6 +114,19 @@ namespace System.Net.Sockets.Kcp
         /// 最大传输单元（Maximum Transmission Unit，MTU）
         /// </summary>
         uint mtu;
+
+        /// <summary>
+        /// 缓冲区最小大小
+        /// </summary>
+        int BufferNeedSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return (int)((mtu + IKCP_OVERHEAD) /** 3*/);
+            }
+        }
+
         /// <summary>
         /// 最大报文段长度
         /// </summary>
@@ -151,7 +164,7 @@ namespace System.Net.Sockets.Kcp
         int nocwnd;
         int logmask;
         public int stream;
-        Memory<byte> buffer;
+        BufferOwner buffer;
 
 
         /// <summary>
@@ -326,21 +339,21 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// 如果外部能够提供缓冲区则使用外部缓冲区，否则new byte[]
         /// </summary>
-        /// <param name="size"></param>
+        /// <param name="needSize"></param>
         /// <returns></returns>
-        public BufferOwner CreateBuffer(int size)
+        internal protected BufferOwner CreateBuffer(int needSize)
         {
-            var res = callbackHandle?.RentBuffer(size);
+            var res = callbackHandle?.RentBuffer(needSize);
             if (res == null)
             {
-                return new KcpInnerBuffer(size);
+                return new KcpInnerBuffer(needSize);
             }
             else
             {
-                if (res.Memory.Length != size)
+                if (res.Memory.Length < needSize)
                 {
                     throw new ArgumentException($"{nameof(callbackHandle.RentBuffer)} 指定的委托不符合标准，返回的" +
-                        $"BufferOwner.Memory.Length 与 needLenght 不一致");
+                        $"BufferOwner.Memory.Length 小于 {nameof(needSize)}");
                 }
             }
 
@@ -375,7 +388,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        public (BufferOwner buffer, int avalidSzie) TryRecv()
+        public (BufferOwner buffer, int avalidLength) TryRecv()
         {
             if (rcv_queue.Count == 0)
             {
@@ -1116,13 +1129,14 @@ namespace System.Net.Sockets.Kcp
                 {
                     if (offset + IKCP_OVERHEAD > mtu)
                     {
-                        callbackHandle.Output(buffer.Span.Slice(0, offset));
+                        callbackHandle.Output(buffer, offset);
                         offset = 0;
+                        buffer = CreateBuffer(BufferNeedSize);
                     }
 
                     seg.sn = temp.sn;
                     seg.ts = temp.ts;
-                    offset += seg.Encode(buffer.Span.Slice(offset));
+                    offset += seg.Encode(buffer.Memory.Span.Slice(offset));
                 }
 
                 #endregion
@@ -1171,10 +1185,11 @@ namespace System.Net.Sockets.Kcp
                     seg.cmd = IKCP_CMD_WASK;
                     if (offset + IKCP_OVERHEAD > (int)mtu)
                     {
-                        callbackHandle.Output(buffer.Span.Slice(0, offset));
+                        callbackHandle.Output(buffer, offset);
                         offset = 0;
+                        buffer = CreateBuffer(BufferNeedSize);
                     }
-                    offset += seg.Encode(buffer.Span.Slice(offset));
+                    offset += seg.Encode(buffer.Memory.Span.Slice(offset));
                 }
 
                 if ((probe & IKCP_ASK_TELL) != 0)
@@ -1182,10 +1197,11 @@ namespace System.Net.Sockets.Kcp
                     seg.cmd = IKCP_CMD_WINS;
                     if (offset + IKCP_OVERHEAD > (int)mtu)
                     {
-                        callbackHandle.Output(buffer.Span.Slice(0, offset));
+                        callbackHandle.Output(buffer, offset);
                         offset = 0;
+                        buffer = CreateBuffer(BufferNeedSize);
                     }
-                    offset += seg.Encode(buffer.Span.Slice(offset));
+                    offset += seg.Encode(buffer.Memory.Span.Slice(offset));
                 }
 
                 probe = 0;
@@ -1285,11 +1301,12 @@ namespace System.Net.Sockets.Kcp
                         var need = IKCP_OVERHEAD + segment.len;
                         if (offset + need > mtu)
                         {
-                            callbackHandle.Output(buffer.Span.Slice(0, offset));
+                            callbackHandle.Output(buffer, offset);
                             offset = 0;
+                            buffer = CreateBuffer(BufferNeedSize);
                         }
 
-                        offset += segment.Encode(buffer.Span.Slice(offset));
+                        offset += segment.Encode(buffer.Memory.Span.Slice(offset));
 
                         if (segment.xmit >= dead_link)
                         {
@@ -1303,8 +1320,9 @@ namespace System.Net.Sockets.Kcp
             // flash remain segments
             if (offset > 0)
             {
-                callbackHandle.Output(buffer.Span.Slice(0, offset));
+                callbackHandle.Output(buffer, offset);
                 offset = 0;
+                buffer = CreateBuffer(BufferNeedSize);
             }
 
             #endregion
@@ -1450,6 +1468,7 @@ namespace System.Net.Sockets.Kcp
 
         /// <summary>
         /// change MTU size, default is 1400
+        /// <para>** 这个方法不是线程安全的。请在没有发送和接收时调用 。</para>
         /// </summary>
         /// <param name="mtu"></param>
         /// <returns></returns>
@@ -1460,7 +1479,7 @@ namespace System.Net.Sockets.Kcp
                 return -1;
             }
 
-            var buffer_ = new byte[(mtu + IKCP_OVERHEAD) * 3];
+            var buffer_ = CreateBuffer(BufferNeedSize);
             if (null == buffer_)
             {
                 return -2;
@@ -1468,6 +1487,7 @@ namespace System.Net.Sockets.Kcp
 
             this.mtu = (uint)mtu;
             mss = this.mtu - IKCP_OVERHEAD;
+            buffer.Dispose();
             buffer = buffer_;
             return 0;
         }

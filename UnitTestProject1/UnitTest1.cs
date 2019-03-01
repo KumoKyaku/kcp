@@ -11,16 +11,16 @@ namespace UnitTestProject1
 {
     public class Handle : IKcpCallback
     {
-        public void Output(ReadOnlySpan<byte> buffer)
-        {
-            var frag = new byte[buffer.Length];
-            buffer.CopyTo(frag);
-            Out(frag);
-        }
+        //public void Output(ReadOnlySpan<byte> buffer)
+        //{
+        //    var frag = new byte[buffer.Length];
+        //    buffer.CopyTo(frag);
+        //    Out(frag);
+        //}
 
-        public Action<byte[]> Out;
-        public Action<IMemoryOwner<byte>> Recv;
-        public void Receive(IMemoryOwner<byte> buffer)
+        public Action<Memory<byte>> Out;
+        public Action<byte[]> Recv;
+        public void Receive(byte[] buffer)
         {
             Recv(buffer);
         }
@@ -28,6 +28,14 @@ namespace UnitTestProject1
         public IMemoryOwner<byte> RentBuffer(int lenght)
         {
             return null;
+        }
+
+        public void Output(IMemoryOwner<byte> buffer, int avalidLength)
+        {
+            using (buffer)
+            {
+                Out(buffer.Memory.Slice(0,avalidLength));
+            }
         }
     }
 
@@ -161,45 +169,31 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 var next = random.Next(100);
                 if (next >= 5)///随机丢包
                 {
-                    kcp2.Input(buffer);
+                    kcp2.Input(buffer.Span);
                 }
             };
 
             handle2.Out += buffer =>
             {
-                kcp1.Input(buffer);
+                kcp1.Input(buffer.Span);
             };
 
             int end = 0;
             handle1.Recv += buffer =>
             {
-                unsafe
+                string str = Encoding.ASCII.GetString(buffer);
+                Assert.AreEqual(message, str);
+                Interlocked.Increment(ref end);
+                //Assert.Warn($"echo {end}");
+                if (end < echoTimes)
                 {
-                    using (MemoryHandle p = buffer.Memory.Pin())
-                    {
-                        string str;
-                        #if NET45||NET451
-                        MemoryMarshal.TryGetArray<byte>(buffer.Memory, out var tempB);
-                        str = Encoding.ASCII.GetString(tempB.Array);
-#else
-                        str = Encoding.ASCII.GetString((byte*)p.Pointer, buffer.Memory.Length);
-#endif
-                        
-                        Assert.AreEqual(message, str);
-                        Interlocked.Increment(ref end);
-                        //Assert.Warn($"echo {end}");
-                        if (end < echoTimes)
-                        {
-                            kcp1.Send(buffer.Memory.Span);
-                        }
-                    }
-
+                    kcp1.Send(buffer);
                 }
             };
 
             handle2.Recv += buffer =>
             {
-                kcp2.Send(buffer.Memory.Span);
+                kcp2.Send(buffer);
             };
 
             Task.Run(async () =>
@@ -212,8 +206,8 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                         int len;
                         while ((len = kcp1.PeekSize()) > 0)
                         {
-                            var buffer = kcp1.CreateBuffer(len);
-                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            var buffer = new byte[len];
+                            if (kcp1.Recv(buffer) >= 0)
                             {
                                 handle1.Receive(buffer);
                             }
@@ -251,7 +245,9 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                             len = avalidSzie;
                             if (buffer != null)
                             {
-                                handle2.Receive(buffer);
+                                var temp = new byte[len];
+                                buffer.Memory.Span.Slice(0, len).CopyTo(temp);
+                                handle2.Receive(temp);
                             }
                         } while (len > 0);
 

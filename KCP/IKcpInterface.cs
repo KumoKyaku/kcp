@@ -10,15 +10,14 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// kcp 发送方向输出
         /// </summary>
-        /// <param name="buffer">kcp 无法交出发送缓冲区控制权 </param>
+        /// <param name="buffer">kcp 交出发送缓冲区控制权，缓冲区来自<see cref="RentBuffer(int)"/></param>
+        /// <param name="avalidLength">数据的有效长度</param>
         /// <returns>不需要返回值</returns>
-        /// <remarks>因为kcp需要丢包重传，所以无法交出发送缓冲区的控制权/remarks>
-        void Output(ReadOnlySpan<byte> buffer);
+        /// <remarks>通过增加 avalidLength 能够在协议栈中有效的减少数据拷贝</remarks>
+        void Output(BufferOwner buffer, int avalidLength);
 
         /// <summary>
-        /// 外部提供缓冲区
-        /// <para></para>
-        /// 注意 BufferOwner.Memory.Length 需要等于 needLenght。
+        /// 外部提供缓冲区,可以在外部链接一个内存池
         /// </summary>
         BufferOwner RentBuffer(int length);
     }

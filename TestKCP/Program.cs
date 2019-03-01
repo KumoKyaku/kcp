@@ -51,7 +51,7 @@ namespace TestKCP
                     Task.Run(() =>
                     {
                         //Console.WriteLine($"12------Thread[{Thread.CurrentThread.ManagedThreadId}]");
-                        kcp2.Input(buffer);
+                        kcp2.Input(buffer.Span);
                     });
 
                 }
@@ -68,7 +68,7 @@ namespace TestKCP
                 {
                     Task.Run(() =>
                     {
-                        kcp1.Input(buffer);
+                        kcp1.Input(buffer.Span);
                     });
                 }
                 else
@@ -80,23 +80,16 @@ namespace TestKCP
 
             handle1.Recv += buffer =>
             {
-                unsafe
+                var str = Encoding.ASCII.GetString(buffer);
+                count++;
+                if (UnitTest1.message == str)
                 {
-                    using (MemoryHandle p = buffer.Memory.Pin())
-                    {
-                        var str = Encoding.ASCII.GetString((byte*)p.Pointer, buffer.Memory.Length);
-                        count++;
-                        if (UnitTest1.message == str)
-                        {
-                            Console.WriteLine($"kcp  echo----{count}");
-                        }
-                        var res = kcp1.Send(buffer.Memory.Span);
-                        if (res != 0)
-                        {
-                            Console.WriteLine($"kcp send error");
-                        }
-                    }
-
+                    Console.WriteLine($"kcp  echo----{count}");
+                }
+                var res = kcp1.Send(buffer);
+                if (res != 0)
+                {
+                    Console.WriteLine($"kcp send error");
                 }
             };
 
@@ -105,7 +98,7 @@ namespace TestKCP
             {
                 recvCount++;
                 Console.WriteLine($"kcp2 recv----{recvCount}");
-                var res = kcp2.Send(buffer.Memory.Span);
+                var res = kcp2.Send(buffer);
                 if (res != 0)
                 {
                     Console.WriteLine($"kcp send error");
@@ -124,8 +117,8 @@ namespace TestKCP
                         int len;
                         while ((len = kcp1.PeekSize()) > 0)
                         {
-                            var buffer = kcp1.CreateBuffer(len);
-                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            var buffer = new byte[len];
+                            if (kcp1.Recv(buffer) >= 0)
                             {
                                 handle1.Receive(buffer);
                             }
@@ -165,7 +158,9 @@ namespace TestKCP
                             len = avalidSzie;
                             if (buffer != null)
                             {
-                                handle2.Receive(buffer);
+                                var temp = new byte[len];
+                                buffer.Memory.Span.Slice(0, len).CopyTo(temp);
+                                handle2.Receive(temp);
                             }
                         } while (len > 0);
 
