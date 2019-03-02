@@ -123,7 +123,7 @@ namespace System.Net.Sockets.Kcp
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                return (int)((mtu + IKCP_OVERHEAD) /** 3*/);
+                return (int)((mtu/* + IKCP_OVERHEAD*/) /** 3*/);
             }
         }
 
