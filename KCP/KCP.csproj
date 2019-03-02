@@ -14,7 +14,7 @@
     <PackageId>Kcp</PackageId>
     <AssemblyName>Kcp</AssemblyName>
     <RootNamespace>System.Net.Sockets.Kcp</RootNamespace>
-    <PackageTags>kcp,notnetstandard2.0,unity</PackageTags>
+    <PackageTags>kcp,dotnetstandard2.0,unity</PackageTags>
     <Description>KCP C#版。线程安全，运行时无alloc，对gc无压力。</Description>
     <PackageProjectUrl>https://github.com/KumoKyaku/KCP</PackageProjectUrl>
     <RepositoryUrl>https://github.com/KumoKyaku/KCP</RepositoryUrl>
