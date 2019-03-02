@@ -19,11 +19,11 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 
 - 内部使用了unsafe代码和非托管内存，所以kcpsegment运行时不会alloc，不会对gc造成压力。
 
-- 对于output回调和TryRecv函数。使用RentBuffer回调，从外部分配内存。请参考IMemoryOwner用法。
+- 对于output回调和TryRecv函数。使用RentBuffer回调，从外部分配内存。请参考[IMemoryOwner](https://docs.microsoft.com/en-us/dotnet/standard/memory-and-spans/memory-t-usage-guidelines)用法。
 - 支持`Span<byte>`
 
 # 测试：
-[同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。](Image/deadlock.jpg)
+[[已修复]~~同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。~~](Image/deadlock.jpg)
 
 在UnitTestProject1路径下执行 dotnet test 可进行多框架测试。（需要安装notnetcoreSDK）
 
