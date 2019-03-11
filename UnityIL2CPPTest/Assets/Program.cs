@@ -9,16 +9,16 @@ namespace TestKCP
 {
     public class Handle : IKcpCallback
     {
-        public void Output(ReadOnlySpan<byte> buffer)
-        {
-            var frag = new byte[buffer.Length];
-            buffer.CopyTo(frag);
-            Out(frag);
-        }
+        //public void Output(ReadOnlySpan<byte> buffer)
+        //{
+        //    var frag = new byte[buffer.Length];
+        //    buffer.CopyTo(frag);
+        //    Out(frag);
+        //}
 
-        public Action<byte[]> Out;
-        public Action<IMemoryOwner<byte>> Recv;
-        public void Receive(IMemoryOwner<byte> buffer)
+        public Action<Memory<byte>> Out;
+        public Action<byte[]> Recv;
+        public void Receive(byte[] buffer)
         {
             Recv(buffer);
         }
@@ -26,6 +26,14 @@ namespace TestKCP
         public IMemoryOwner<byte> RentBuffer(int lenght)
         {
             return null;
+        }
+
+        public void Output(IMemoryOwner<byte> buffer, int avalidLength)
+        {
+            using (buffer)
+            {
+                Out(buffer.Memory.Slice(0, avalidLength));
+            }
         }
     }
 
@@ -172,7 +180,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                     Task.Run(() =>
                     {
                         //Console.WriteLine($"12------Thread[{Thread.CurrentThread.ManagedThreadId}]");
-                        kcp2.Input(buffer);
+                        kcp2.Input(buffer.Span);
                     });
 
                 }
@@ -189,7 +197,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 {
                     Task.Run(() =>
                     {
-                        kcp1.Input(buffer);
+                        kcp1.Input(buffer.Span);
                     });
                 }
                 else
@@ -201,32 +209,26 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
 
             handle1.Recv += buffer =>
             {
-                unsafe
+                var str = Encoding.ASCII.GetString(buffer);
+                count++;
+                if (TestClass.message == str)
                 {
-                    using (MemoryHandle p = buffer.Memory.Pin())
-                    {
-                        var str = Encoding.ASCII.GetString((byte*)p.Pointer, buffer.Memory.Length);
-                        count++;
-                        if (TestClass.message == str)
-                        {
-                            kcptest.Log1($"kcp  echo----{count}");
-                        }
-                        var res = kcp1.Send(buffer.Memory.Span);
-                        if (res != 0)
-                        {
-                             kcptest.Log1($"kcp send error");
-                        }
-                    }
-
+                    kcptest.Log1($"kcp  echo----{count}");
+                }
+                var res = kcp1.Send(buffer);
+                if (res != 0)
+                {
+                    kcptest.Log1($"kcp send error");
                 }
             };
 
             int recvCount = 0;
+
             handle2.Recv += buffer =>
             {
                 recvCount++;
-                 kcptest.Log2($"kcp2 recv----{recvCount}");
-                var res = kcp2.Send(buffer.Memory.Span);
+                kcptest.Log2($"kcp2 recv----{recvCount}");
+                var res = kcp2.Send(buffer);
                 if (res != 0)
                 {
                     kcptest.Log2($"kcp send error");
@@ -245,8 +247,8 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                         int len;
                         while ((len = kcp1.PeekSize()) > 0)
                         {
-                            var buffer = kcp1.CreateBuffer(len);
-                            if (kcp1.Recv(buffer.Memory.Span) >= 0)
+                            var buffer = new byte[len];
+                            if (kcp1.Recv(buffer) >= 0)
                             {
                                 handle1.Receive(buffer);
                             }
@@ -286,7 +288,9 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                             len = avalidSzie;
                             if (buffer != null)
                             {
-                                handle2.Receive(buffer);
+                                var temp = new byte[len];
+                                buffer.Memory.Span.Slice(0, len).CopyTo(temp);
+                                handle2.Receive(temp);
                             }
                         } while (len > 0);
 

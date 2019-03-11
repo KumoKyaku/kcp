@@ -1,17 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 using TestKCP;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System;
+using UnityEngine.UI;
 
 public class kcptest : MonoBehaviour
 {
     static kcptest instance;
-    public TextMeshProUGUI kcpr1;
-    public TextMeshProUGUI kcpr2;
+    public Text kcpr1;
+    public Text kcpr2;
     private void Awake()
     {
         instance = this;   
