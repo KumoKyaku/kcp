@@ -14,7 +14,7 @@ namespace System.Net.Sockets.Kcp
     /// </summary>
     public partial class Kcp : IKcpSetting, IKcpUpdate, IDisposable
     {
-        /// 为了减少阅读难度，变量名尽量于 C版 统一
+        // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
         conv 会话ID
         mtu 最大传输单元
@@ -59,7 +59,7 @@ namespace System.Net.Sockets.Kcp
         /// from the same connection.
         /// </summary>
         /// <param name="conv_"></param>
-        /// <param name="output_"></param>
+        /// <param name="callback"></param>
         public Kcp(uint conv_, IKcpCallback callback)
         {
             conv = conv_;
@@ -1003,7 +1003,7 @@ namespace System.Net.Sockets.Kcp
 
                             if (length > 0)
                             {
-                                data.Slice(offset).CopyTo(seg.data);
+                                data.Slice(offset, (int)length).CopyTo(seg.data);
                             }
 
                             Parse_data(seg);
