@@ -17,7 +17,7 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 
 # 说明：
 
-- 内部使用了unsafe代码和非托管内存，所以kcpsegment运行时不会alloc，不会对gc造成压力。
+- 内部使用了unsafe代码和非托管内存，不会对gc造成压力。
 
 - 对于output回调和TryRecv函数。使用RentBuffer回调，从外部分配内存。请参考[IMemoryOwner](https://docs.microsoft.com/en-us/dotnet/standard/memory-and-spans/memory-t-usage-guidelines)用法。
 - 支持`Span<byte>`
