@@ -25,7 +25,7 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 # 测试：
 [[已修复]~~同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。~~](Image/deadlock.jpg)
 
-在UnitTestProject1路径下执行 dotnet test 可进行多框架测试。（需要安装notnetcoreSDK）
+在UnitTestProject1路径下执行 dotnet test 可进行多框架测试。（需要安装dotnetcoreSDK）
 
 # 相对C版的一些变化：
 
