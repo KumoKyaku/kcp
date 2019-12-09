@@ -60,10 +60,12 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         /// <param name="conv_"></param>
         /// <param name="callback"></param>
-        public Kcp(uint conv_, IKcpCallback callback)
+        /// <param name="rentable">可租用内存的回调</param>
+        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
         {
             conv = conv_;
             callbackHandle = callback;
+            this.rentable = rentable;
 
             snd_wnd = IKCP_WND_SND;
             rcv_wnd = IKCP_WND_RCV;
@@ -336,6 +338,7 @@ namespace System.Net.Sockets.Kcp
     public partial class Kcp
     {
         IKcpCallback callbackHandle;
+        IRentable rentable;
         /// <summary>
         /// 如果外部能够提供缓冲区则使用外部缓冲区，否则new byte[]
         /// </summary>
@@ -343,7 +346,7 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         internal protected BufferOwner CreateBuffer(int needSize)
         {
-            var res = callbackHandle?.RentBuffer(needSize);
+            var res = rentable?.RentBuffer(needSize);
             if (res == null)
             {
                 return new KcpInnerBuffer(needSize);
@@ -352,7 +355,7 @@ namespace System.Net.Sockets.Kcp
             {
                 if (res.Memory.Length < needSize)
                 {
-                    throw new ArgumentException($"{nameof(callbackHandle.RentBuffer)} 指定的委托不符合标准，返回的" +
+                    throw new ArgumentException($"{nameof(rentable.RentBuffer)} 指定的委托不符合标准，返回的" +
                         $"BufferOwner.Memory.Length 小于 {nameof(needSize)}");
                 }
             }

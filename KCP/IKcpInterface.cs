@@ -15,7 +15,14 @@ namespace System.Net.Sockets.Kcp
         /// <returns>不需要返回值</returns>
         /// <remarks>通过增加 avalidLength 能够在协议栈中有效的减少数据拷贝</remarks>
         void Output(BufferOwner buffer, int avalidLength);
+    }
 
+
+    /// <summary>
+    /// 外部提供缓冲区,可以在外部链接一个内存池
+    /// </summary>
+    public interface IRentable
+    {
         /// <summary>
         /// 外部提供缓冲区,可以在外部链接一个内存池
         /// </summary>
