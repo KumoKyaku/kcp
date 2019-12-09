@@ -79,6 +79,7 @@ namespace System.Net.Sockets.Kcp
             interval = IKCP_INTERVAL;
             ts_flush = IKCP_INTERVAL;
             ssthresh = IKCP_THRESH_INIT;
+            fastlimit = IKCP_FASTACK_LIMIT;
             dead_link = IKCP_DEADLINK;
         }
         #region Const
@@ -104,7 +105,7 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_THRESH_MIN = 2;
         public const int IKCP_PROBE_INIT = 7000;   // 7 secs to probe window size
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
-
+        public const int IKCP_FASTACK_LIMIT = 5;		// max times to trigger fastack
         #endregion
 
         #region kcp members
@@ -163,6 +164,7 @@ namespace System.Net.Sockets.Kcp
         uint dead_link;
         uint incr;
         int fastresend;
+        int fastlimit;
         int nocwnd;
         int logmask;
         public int stream;
@@ -1288,11 +1290,15 @@ namespace System.Net.Sockets.Kcp
                     }
                     else if (segment.fastack >= resent)
                     {
-                        needsend = true;
-                        segment.xmit++;
-                        segment.fastack = 0;
-                        segment.resendts = current_ + segment.rto;
-                        change++;
+                        if (segment.xmit <= fastlimit
+                            || fastlimit <= 0)
+                        {
+                            needsend = true;
+                            segment.xmit++;
+                            segment.fastack = 0;
+                            segment.resendts = current_ + segment.rto;
+                            change++;
+                        }
                     }
 
                     if (needsend)
