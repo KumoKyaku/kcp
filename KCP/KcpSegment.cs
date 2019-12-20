@@ -149,14 +149,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + LocalOffset + 0);
+                    return *(uint*)(LocalOffset + 0 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + LocalOffset + 0) = value;
+                    *(uint*)(LocalOffset + 0 + ptr) = value;
                 }
             }
         }
@@ -170,14 +170,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(ptr + LocalOffset + 4);
+                    return *(LocalOffset + 4 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(ptr + LocalOffset + 4) = value;
+                    *(LocalOffset + 4 + ptr) = value;
                 }
             }
         }
@@ -191,14 +191,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(ptr + LocalOffset + 5);
+                    return *(LocalOffset + 5 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(ptr + LocalOffset + 5) = value;
+                    *(LocalOffset + 5 + ptr) = value;
                 }
             }
         }
@@ -212,14 +212,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(ushort*)(ptr + LocalOffset + 6);
+                    return *(ushort*)(LocalOffset + 6 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(ushort*)(ptr + LocalOffset + 6) = value;
+                    *(ushort*)(LocalOffset + 6 + ptr) = value;
                 }
             }
         }
@@ -233,14 +233,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + LocalOffset + 8);
+                    return *(uint*)(LocalOffset + 8 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + LocalOffset + 8) = value;
+                    *(uint*)(LocalOffset + 8 + ptr) = value;
                 }
             }
         }
@@ -255,14 +255,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + LocalOffset + 12);
+                    return *(uint*)(LocalOffset + 12 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + LocalOffset + 12) = value;
+                    *(uint*)(LocalOffset + 12 + ptr) = value;
                 }
             }
         }
@@ -276,14 +276,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + LocalOffset + 16);
+                    return *(uint*)(LocalOffset + 16 + ptr);
                 }
             }
             set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + LocalOffset + 16) = value;
+                    *(uint*)(LocalOffset + 16 + ptr) = value;
                 }
             }
         }
@@ -298,14 +298,14 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return *(uint*)(ptr + LocalOffset + 20);
+                    return *(uint*)(LocalOffset + 20 + ptr);
                 }
             }
             private set
             {
                 unsafe
                 {
-                    *(uint*)(ptr + LocalOffset + 20) = value;
+                    *(uint*)(LocalOffset + 20 + ptr) = value;
                 }
             }
         }
@@ -320,7 +320,7 @@ namespace System.Net.Sockets.Kcp
             {
                 unsafe
                 {
-                    return new Span<byte>(ptr + LocalOffset + HeadOffset, (int)len);
+                    return new Span<byte>(LocalOffset + HeadOffset + ptr, (int)len);
                 }
             }
         }
