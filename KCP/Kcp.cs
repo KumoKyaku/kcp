@@ -1,4 +1,5 @@
-﻿using System.Buffers.Binary;
+﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -393,6 +394,16 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public bool TryRecv(IBufferWriter<byte> writer)
+        {
+            throw new NotImplementedException();
+        }
+
         public (BufferOwner buffer, int avalidLength) TryRecv()
         {
             if (rcv_queue.Count == 0)
@@ -609,6 +620,16 @@ namespace System.Net.Sockets.Kcp
 
                 return (int)length;
             }
+        }
+
+        /// <summary>
+        /// todo
+        /// </summary>
+        /// <param name="sequence"></param>
+        /// <returns></returns>
+        public int Send(in ReadOnlySequence<byte> sequence)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -852,6 +873,19 @@ namespace System.Net.Sockets.Kcp
             }
 
             Move_Rcv_buf_2_Rcv_queue();
+        }
+
+
+        public int Input(in ReadOnlySequence<byte> byteSequence)
+        {
+            throw new NotImplementedException();
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -1428,6 +1462,12 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         public DateTime Check(DateTime time)
         {
+            if (CheckDispose())
+            {
+                //检查释放
+                return default;
+            }
+
             if (updated == 0)
             {
                 return time;
