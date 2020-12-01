@@ -24,8 +24,7 @@ namespace System.Net.Sockets.Kcp
         {
             byte[] buffer = new byte[span.Length];
             span.CopyTo(buffer);
-            recv.Write(buffer);
-            return 0;
+            return Input(buffer);
         }
 
         public async ValueTask Recv(IBufferWriter<byte> writer, object option = null)
@@ -50,8 +49,7 @@ namespace System.Net.Sockets.Kcp
         {
             byte[] buffer = new byte[span.Length];
             span.CopyTo(buffer);
-            send.Write(buffer);
-            return 0;
+            return Send(buffer);
         }
 
         public async ValueTask Output(IBufferWriter<byte> writer, object option = null)
@@ -67,6 +65,4 @@ namespace System.Net.Sockets.Kcp
             writer.Advance(buffer.Length);
         }
     }
-
-
 }

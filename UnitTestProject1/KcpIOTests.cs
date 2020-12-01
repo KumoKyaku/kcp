@@ -23,7 +23,7 @@ namespace System.Net.Sockets.Kcp.Tests
                 testBuffer[i] = (byte)(i % byte.MaxValue);
             }
 
-            kcpIO.Send(testBuffer);
+            kcpIO.Send(new ReadOnlySequence<byte>(testBuffer));
             Writer writer = new Writer();
             kcpIO.Output(writer).AsTask().Wait();
 
@@ -32,7 +32,7 @@ namespace System.Net.Sockets.Kcp.Tests
                 Assert.AreEqual(writer.buffer[i], testBuffer[i]);
             }
 
-            kcpIO.Input(new ReadOnlySpan<byte>(writer.buffer, 0, writer.Count));
+            kcpIO.Input(new ReadOnlySequence<byte>(writer.buffer, 0, writer.Count));
 
             Writer recv = new Writer();
             kcpIO.Recv(recv).AsTask().Wait();
