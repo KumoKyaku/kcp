@@ -1,8 +1,10 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 using static System.Math;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
@@ -13,7 +15,7 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public partial class Kcp : IKcpSetting, IKcpUpdate, IDisposable
+    public partial class KcpV2 : IKcpSetting, IKcpUpdate, IDisposable
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -62,7 +64,7 @@ namespace System.Net.Sockets.Kcp
         /// <param name="conv_"></param>
         /// <param name="callback"></param>
         /// <param name="rentable">可租用内存的回调</param>
-        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
+        public KcpV2(uint conv_, IKcpCallback callback, IRentable rentable = null)
         {
             conv = conv_;
             callbackHandle = callback;
@@ -316,7 +318,7 @@ namespace System.Net.Sockets.Kcp
         }
 
         // 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
-        ~Kcp()
+        ~KcpV2()
         {
             // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
             Dispose(false);
@@ -338,7 +340,7 @@ namespace System.Net.Sockets.Kcp
     }
 
     //extension 重构和新增加的部分
-    public partial class Kcp
+    public partial class KcpV2
     {
         IKcpCallback callbackHandle;
         IRentable rentable;
@@ -453,7 +455,7 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
-    public partial class Kcp
+    public partial class KcpV2
     {
         static uint Ibound(uint lower, uint middle, uint upper)
         {
@@ -873,6 +875,19 @@ namespace System.Net.Sockets.Kcp
             }
 
             Move_Rcv_buf_2_Rcv_queue();
+        }
+
+
+        public int Input(in ReadOnlySequence<byte> byteSequence)
+        {
+            throw new NotImplementedException();
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -1613,24 +1628,4 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         public int WaitSnd => snd_buf.Count + snd_queue.Count;
     }
-
-    public static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
-    {
-        private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint ConvertTime(this in DateTime time)
-        {
-            return (uint)(Convert.ToInt64(time.Subtract(utc_time).TotalMilliseconds) & 0xffffffff);
-        }
-    }
 }
-
-
-
-
-
-
-
-
-
-
