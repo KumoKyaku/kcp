@@ -393,16 +393,6 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        /// <summary>
-        /// todo
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <returns></returns>
-        public bool TryRecv(IBufferWriter<byte> writer)
-        {
-            throw new NotImplementedException();
-        }
-
         public (BufferOwner buffer, int avalidLength) TryRecv()
         {
             if (rcv_queue.Count == 0)
@@ -616,16 +606,6 @@ namespace System.Net.Sockets.Kcp
 
                 return (int)length;
             }
-        }
-
-        /// <summary>
-        /// todo
-        /// </summary>
-        /// <param name="sequence"></param>
-        /// <returns></returns>
-        public int Send(in ReadOnlySequence<byte> sequence)
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
