@@ -13,7 +13,7 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public partial class Kcp : IKcpSetting, IKcpUpdate, IDisposable
+    public class Kcp : IKcpSetting, IKcpUpdate, IDisposable
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -335,11 +335,10 @@ namespace System.Net.Sockets.Kcp
             GC.SuppressFinalize(this);
         }
         #endregion
-    }
 
-    //extension 重构和新增加的部分
-    public partial class Kcp
-    {
+
+        //extension 重构和新增加的部分============================================
+    
         IKcpCallback callbackHandle;
         IRentable rentable;
         /// <summary>
@@ -451,10 +450,7 @@ namespace System.Net.Sockets.Kcp
             var recvlength = UncheckRecv(buffer.Memory.Span);
             return (buffer, recvlength);
         }
-    }
 
-    public partial class Kcp
-    {
         static uint Ibound(uint lower, uint middle, uint upper)
         {
             return Min(Max(lower, middle), upper);
