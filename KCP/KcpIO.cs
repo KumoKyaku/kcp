@@ -326,9 +326,16 @@ namespace System.Net.Sockets.Kcp
             return 0;
         }
 
-        public int Input(ReadOnlySequence<byte> span)
+        public int Input(ReadOnlySequence<byte> sequence)
         {
-            throw new NotImplementedException();
+            byte[] temp = ArrayPool<byte>.Shared.Rent((int)sequence.Length);
+            Span<byte> data = new Span<byte>(temp, 0, (int)sequence.Length);
+            sequence.CopyTo(data);
+
+            var ret = Input(data);
+
+            ArrayPool<byte>.Shared.Return(temp);
+            return ret;
         }
 
         internal override void Parse_data(KcpSegment newseg)
