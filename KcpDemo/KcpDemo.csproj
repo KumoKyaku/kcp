@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>.net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KCP\Kcp.csproj" />
+    <ProjectReference Include="..\UnitTestProject1\UnitTestProject1.csproj" />
+  </ItemGroup>
+
+</Project>
