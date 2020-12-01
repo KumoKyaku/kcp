@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using static System.Math;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
@@ -134,27 +135,27 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// 最大报文段长度
         /// </summary>
-        uint mss;
+        protected uint mss;
         int state;
-        uint snd_una;
+        protected uint snd_una;
         uint snd_nxt;
         /// <summary>
         /// 下一个等待接收消息ID
         /// </summary>
-        uint rcv_nxt;
+        protected uint rcv_nxt;
         uint ts_recent;
         uint ts_lastack;
-        uint ssthresh;
+        protected uint ssthresh;
         uint rx_rttval;
         uint rx_srtt;
         uint rx_rto;
         uint rx_minrto;
         uint snd_wnd;
-        uint rcv_wnd;
-        uint rmt_wnd;
-        uint cwnd;
-        uint probe;
-        uint current;
+        protected uint rcv_wnd;
+        protected uint rmt_wnd;
+        protected uint cwnd;
+        protected uint probe;
+        protected uint current;
         uint interval;
         uint ts_flush;
         uint xmit;
@@ -163,13 +164,13 @@ namespace System.Net.Sockets.Kcp
         uint ts_probe;
         uint probe_wait;
         uint dead_link;
-        uint incr;
+        protected uint incr;
         int fastresend;
         int fastlimit;
         int nocwnd;
         int logmask;
         public int stream;
-        BufferOwner buffer;
+        protected BufferOwner buffer;
 
 
         /// <summary>
@@ -181,17 +182,17 @@ namespace System.Net.Sockets.Kcp
         #endregion
 
         private readonly object snd_bufLock = new object();
-        private readonly object rcv_queueLock = new object();
+        protected readonly object rcv_queueLock = new object();
         private readonly object rcv_bufLock = new object();
 
         /// <summary>
         /// 发送 ack 队列 
         /// </summary>
-        ConcurrentQueue<(uint sn, uint ts)> acklist = new ConcurrentQueue<(uint sn, uint ts)>();
+        protected ConcurrentQueue<(uint sn, uint ts)> acklist = new ConcurrentQueue<(uint sn, uint ts)>();
         /// <summary>
         /// 发送等待队列
         /// </summary>
-        ConcurrentQueue<KcpSegment> snd_queue = new ConcurrentQueue<KcpSegment>();
+        internal ConcurrentQueue<KcpSegment> snd_queue = new ConcurrentQueue<KcpSegment>();
         /// <summary>
         /// 正在发送列表
         /// </summary>
@@ -200,7 +201,7 @@ namespace System.Net.Sockets.Kcp
         /// 正在等待触发接收回调函数消息列表
         /// <para>需要执行的操作  添加 遍历 删除</para>
         /// </summary>
-        List<KcpSegment> rcv_queue = new List<KcpSegment>();
+        internal List<KcpSegment> rcv_queue = new List<KcpSegment>();
         /// <summary>
         /// 正在等待重组消息列表
         /// <para>需要执行的操作  添加 插入 遍历 删除</para>
@@ -338,8 +339,8 @@ namespace System.Net.Sockets.Kcp
 
 
         //extension 重构和新增加的部分============================================
-    
-        IKcpCallback callbackHandle;
+
+        internal protected IKcpCallback callbackHandle;
         IRentable rentable;
         /// <summary>
         /// 如果外部能够提供缓冲区则使用外部缓冲区，否则new byte[]
@@ -446,7 +447,7 @@ namespace System.Net.Sockets.Kcp
             return Min(Max(lower, middle), upper);
         }
 
-        static int Itimediff(uint later, uint earlier)
+        protected static int Itimediff(uint later, uint earlier)
         {
             return ((int)(later - earlier));
         }
@@ -540,7 +541,7 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// move available data from rcv_buf -> rcv_queue
         /// </summary>
-        void Move_Rcv_buf_2_Rcv_queue()
+        protected void Move_Rcv_buf_2_Rcv_queue()
         {
             lock (rcv_bufLock)
             {
@@ -688,7 +689,7 @@ namespace System.Net.Sockets.Kcp
         /// update ack.
         /// </summary>
         /// <param name="rtt"></param>
-        void Update_ack(int rtt)
+        protected void Update_ack(int rtt)
         {
             if (rx_srtt == 0)
             {
@@ -718,7 +719,7 @@ namespace System.Net.Sockets.Kcp
             rx_rto = Ibound(rx_minrto, rto, IKCP_RTO_MAX);
         }
 
-        void Shrink_buf()
+        protected void Shrink_buf()
         {
             lock (snd_bufLock)
             {
@@ -726,7 +727,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        void Parse_ack(uint sn)
+        protected void Parse_ack(uint sn)
         {
             if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
             {
@@ -753,7 +754,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        void Parse_una(uint una)
+        protected void Parse_una(uint una)
         {
             /// 删除给定时间之前的片段。保留之后的片段
             lock (snd_bufLock)
@@ -775,7 +776,7 @@ namespace System.Net.Sockets.Kcp
 
         }
 
-        void Parse_fastack(uint sn)
+        protected void Parse_fastack(uint sn)
         {
             if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
             {
@@ -799,7 +800,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        void Parse_data(KcpSegment newseg)
+        internal virtual void Parse_data(KcpSegment newseg)
         {
             var sn = newseg.sn;
 

@@ -61,12 +61,10 @@ namespace System.Net.Sockets.Kcp
         /// from the same connection.
         /// </summary>
         /// <param name="conv_"></param>
-        /// <param name="callback"></param>
         /// <param name="rentable">可租用内存的回调</param>
-        public KcpV2(uint conv_, IKcpCallback callback, IRentable rentable = null)
+        public KcpV2(uint conv_, IRentable rentable = null)
         {
             conv = conv_;
-            callbackHandle = callback;
             this.rentable = rentable;
 
             snd_wnd = IKCP_WND_SND;

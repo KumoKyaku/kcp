@@ -108,7 +108,7 @@ namespace System.Net.Sockets.Kcp
     public class KcpIO : KcpV2, IKcpIO
     {
         OutputQ outq;
-        public KcpIO(uint conv_, IKcpCallback callback, IRentable rentable = null) : base(conv_, callback, rentable)
+        public KcpIO(uint conv_, IRentable rentable = null) : base(conv_, rentable)
         {
             outq = new OutputQ();
             callbackHandle = outq;

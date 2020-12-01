@@ -5,7 +5,7 @@ using System.Text;
 
 namespace System.Net.Sockets.Kcp
 {
-    public static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
+    internal static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
     {
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
