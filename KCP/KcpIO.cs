@@ -423,7 +423,7 @@ namespace System.Net.Sockets.Kcp
         public async ValueTask Recv(IBufferWriter<byte> writer, object option = null)
         {
             FastChechRecv();
-            var list = await recvSignal.ReadAsync();
+            var list = await recvSignal.ReadAsync().ConfigureAwait(false);
             foreach (var seg in list)
             {
                 WriteRecv(writer, seg);
