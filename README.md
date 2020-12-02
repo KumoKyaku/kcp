@@ -6,6 +6,9 @@
 
 开箱即用。也可以使用Nuget 搜索KCP。
 
+# 新增异步API标准接口
+附带一个基本实现。
+
 # 链接：
 
 c: skywind3000 [KCP](https://github.com/skywind3000/kcp)  
