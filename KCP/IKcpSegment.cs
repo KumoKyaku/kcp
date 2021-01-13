@@ -21,34 +21,23 @@ namespace System.Net.Sockets.Kcp
         int Encode(Span<byte> buffer);
     }
 
-    public interface ISegmentManager<S> where S: IKcpSegment
+    public interface ISegmentManager<Segment> where Segment: IKcpSegment
     {
-        S Alloc(int appendDateSize);
-        void FreeHGlobal(S seg);
+        Segment Alloc(int appendDateSize);
+        void Free(Segment seg);
     }
 
     public class SimpleSegManager: ISegmentManager<KcpSegment>
     {
+        public static SimpleSegManager Default { get; } = new SimpleSegManager();
         public KcpSegment Alloc(int appendDateSize)
         {
-            var total = KcpSegment.LocalOffset + KcpSegment.HeadOffset + appendDateSize;
-            IntPtr intPtr = Marshal.AllocHGlobal(total);
-            unsafe
-            {
-                ///清零    不知道是不是有更快的清0方法？
-                Span<byte> span = new Span<byte>(intPtr.ToPointer(), total);
-                span.Clear();
-
-                return new KcpSegment((byte*)intPtr.ToPointer(), (uint)appendDateSize);
-            }
+            return KcpSegment.AllocHGlobal(appendDateSize);
         }
 
-        public void FreeHGlobal(KcpSegment seg)
+        public void Free(KcpSegment seg)
         {
-            unsafe
-            {
-                Marshal.FreeHGlobal((IntPtr)seg.ptr);
-            }
+            KcpSegment.FreeHGlobal(seg);
         }
     }
 }

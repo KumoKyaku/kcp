@@ -9,7 +9,8 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
 {
-    public class Kcp : KcpCore
+    public class Kcp<Segment> : KcpCore<Segment>
+        where Segment:IKcpSegment
     {
         /// <summary>
         /// create a new kcp control object, 'conv' must equal in two endpoint
@@ -158,7 +159,7 @@ namespace System.Net.Sockets.Kcp
                     count++;
                     int frg = seg.frg;
 
-                    KcpSegment.FreeHGlobal(seg);
+                    SegmentManager.Free(seg);
                     if (frg == 0)
                     {
                         break;
@@ -293,7 +294,7 @@ namespace System.Net.Sockets.Kcp
                     size = buffer.Length - offset;
                 }
 
-                var seg = KcpSegment.AllocHGlobal(size);
+                var seg = SegmentManager.Alloc(size);
                 buffer.Slice(offset, size).CopyTo(seg.data);
                 offset += size;
                 seg.frg = (byte)(count - i - 1);
@@ -448,7 +449,7 @@ namespace System.Net.Sockets.Kcp
 
                         if (Itimediff(sn, rcv_nxt) >= 0)
                         {
-                            var seg = KcpSegment.AllocHGlobal((int)length);
+                            var seg = SegmentManager.Alloc((int)length);
                             seg.conv = conv_;
                             seg.cmd = cmd;
                             seg.frg = frg;
@@ -524,6 +525,14 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
+    public class Kcp : Kcp<KcpSegment>
+    {
+        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null) 
+            : base(conv_, callback, rentable)
+        {
+            SegmentManager = SimpleSegManager.Default;
+        }
+    }
 }
 
 

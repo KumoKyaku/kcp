@@ -14,7 +14,8 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public class KcpCore: IKcpSetting, IKcpUpdate, IDisposable
+    public class KcpCore<Segment>: IKcpSetting, IKcpUpdate, IDisposable
+        where Segment:IKcpSegment
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -165,21 +166,21 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// 发送等待队列
         /// </summary>
-        internal ConcurrentQueue<KcpSegment> snd_queue = new ConcurrentQueue<KcpSegment>();
+        internal ConcurrentQueue<Segment> snd_queue = new ConcurrentQueue<Segment>();
         /// <summary>
         /// 正在发送列表
         /// </summary>
-        internal LinkedList<KcpSegment> snd_buf = new LinkedList<KcpSegment>();
+        internal LinkedList<Segment> snd_buf = new LinkedList<Segment>();
         /// <summary>
         /// 正在等待触发接收回调函数消息列表
         /// <para>需要执行的操作  添加 遍历 删除</para>
         /// </summary>
-        internal List<KcpSegment> rcv_queue = new List<KcpSegment>();
+        internal List<Segment> rcv_queue = new List<Segment>();
         /// <summary>
         /// 正在等待重组消息列表
         /// <para>需要执行的操作  添加 插入 遍历 删除</para>
         /// </summary>
-        internal LinkedList<KcpSegment> rcv_buf = new LinkedList<KcpSegment>();
+        internal LinkedList<Segment> rcv_buf = new LinkedList<Segment>();
 
         /// <summary>
         /// get how many packet is waiting to be sent
@@ -189,6 +190,7 @@ namespace System.Net.Sockets.Kcp
 
         #endregion
 
+        public ISegmentManager<Segment> SegmentManager { get; set; }
         public KcpCore(uint conv_)
         {
             conv = conv_;
@@ -250,7 +252,7 @@ namespace System.Net.Sockets.Kcp
 
                     // 释放未托管的资源(未托管的对象)并在以下内容中替代终结器。
                     // 将大型字段设置为 null。
-                    void FreeCollection(IEnumerable<KcpSegment> collection)
+                    void FreeCollection(IEnumerable<Segment> collection)
                     {
                         if (collection == null)
                         {
@@ -260,7 +262,7 @@ namespace System.Net.Sockets.Kcp
                         {
                             try
                             {
-                                KcpSegment.FreeHGlobal(item);
+                                SegmentManager.Free(item);
                             }
                             catch (Exception)
                             {
@@ -276,7 +278,7 @@ namespace System.Net.Sockets.Kcp
                     {
                         try
                         {
-                            KcpSegment.FreeHGlobal(segment);
+                            SegmentManager.Free(segment);
                         }
                         catch (Exception)
                         {
@@ -542,7 +544,7 @@ namespace System.Net.Sockets.Kcp
                     if (sn == seg.sn)
                     {
                         snd_buf.Remove(p);
-                        KcpSegment.FreeHGlobal(seg);
+                        SegmentManager.Free(seg);
                         break;
                     }
 
@@ -564,7 +566,7 @@ namespace System.Net.Sockets.Kcp
                     var seg = snd_buf.First.Value;
                     if (Itimediff(una, seg.sn) > 0)
                     {
-                        KcpSegment.FreeHGlobal(seg);
+                        SegmentManager.Free(seg);
                         snd_buf.RemoveFirst();
                     }
                     else
@@ -600,7 +602,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        internal virtual void Parse_data(KcpSegment newseg)
+        internal virtual void Parse_data(Segment newseg)
         {
             var sn = newseg.sn;
 
@@ -608,14 +610,14 @@ namespace System.Net.Sockets.Kcp
             {
                 if (Itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || Itimediff(sn, rcv_nxt) < 0)
                 {
-                    KcpSegment.FreeHGlobal(newseg);
+                    SegmentManager.Free(newseg);
                     return;
                 }
 
                 var repeat = false;
 
                 ///检查是否重复消息和插入位置
-                LinkedListNode<KcpSegment> p;
+                LinkedListNode<Segment> p;
                 for (p = rcv_buf.Last; p != null; p = p.Previous)
                 {
                     var seg = p.Value;
@@ -645,7 +647,7 @@ namespace System.Net.Sockets.Kcp
                 }
                 else
                 {
-                    KcpSegment.FreeHGlobal(newseg);
+                    SegmentManager.Free(newseg);
                 }
             }
 

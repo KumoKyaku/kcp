@@ -105,7 +105,8 @@ namespace System.Net.Sockets.Kcp
     }
 
     
-    public class KcpIO : KcpCore, IKcpIO
+    public class KcpIO<Segment> : KcpCore<Segment>, IKcpIO
+        where Segment:IKcpSegment
     {
         OutputQ outq;
         public KcpIO(uint conv_) : base(conv_)
@@ -251,7 +252,7 @@ namespace System.Net.Sockets.Kcp
 
                         if (Itimediff(sn, rcv_nxt) >= 0)
                         {
-                            var seg = KcpSegment.AllocHGlobal((int)length);
+                            var seg = SegmentManager.Alloc((int)length);
                             seg.conv = conv_;
                             seg.cmd = cmd;
                             seg.frg = frg;
@@ -338,13 +339,13 @@ namespace System.Net.Sockets.Kcp
             return ret;
         }
 
-        internal override void Parse_data(KcpSegment newseg)
+        internal override void Parse_data(Segment newseg)
         {
             base.Parse_data(newseg);
             FastChechRecv();
         }
 
-        SimplePipeQueue<List<KcpSegment>> recvSignal = new SimplePipeQueue<List<KcpSegment>>();
+        SimplePipeQueue<List<Segment>> recvSignal = new SimplePipeQueue<List<Segment>>();
         private void FastChechRecv()
         {
             if (rcv_queue.Count == 0)
@@ -369,7 +370,7 @@ namespace System.Net.Sockets.Kcp
             {
                 ///至少含有一个完整消息
 
-                List<KcpSegment> kcpSegments = new List<KcpSegment>();
+                List<Segment> kcpSegments = new List<Segment>();
                 
                 var recover = false;
                 if (rcv_queue.Count >= rcv_wnd)
@@ -431,12 +432,12 @@ namespace System.Net.Sockets.Kcp
             list.Clear();
         }
 
-        private static void WriteRecv(IBufferWriter<byte> writer, KcpSegment seg)
+        private void WriteRecv(IBufferWriter<byte> writer, Segment seg)
         {
             var curCount = (int)seg.len;
             var target = writer.GetSpan(curCount);
             seg.data.CopyTo(target);
-            KcpSegment.FreeHGlobal(seg);
+            SegmentManager.Free(seg);
             writer.Advance(curCount);
         }
 
@@ -498,7 +499,7 @@ namespace System.Net.Sockets.Kcp
                     size = span.Length - offset;
                 }
 
-                var seg = KcpSegment.AllocHGlobal(size);
+                var seg = SegmentManager.Alloc(size);
                 span.Slice(offset, size).CopyTo(seg.data);
                 offset += size;
                 seg.frg = (byte)(count - i - 1);
@@ -568,7 +569,7 @@ namespace System.Net.Sockets.Kcp
                     size = (int)span.Length - offset;
                 }
 
-                var seg = KcpSegment.AllocHGlobal(size);
+                var seg = SegmentManager.Alloc(size);
                 span.Slice(offset, size).CopyTo(seg.data);
                 offset += size;
                 seg.frg = (byte)(count - i - 1);
