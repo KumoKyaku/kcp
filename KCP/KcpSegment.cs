@@ -10,9 +10,9 @@ namespace System.Net.Sockets.Kcp
     /// <para>不要对没有初始化的KcpSegment(内部指针为0，所有属性都将指向位置区域) 进行任何赋值操作，可能导致内存损坏。
     /// 出于性能考虑，没有对此项进行安全检查。</para>
     /// </summary>
-    internal struct KcpSegment
+    public struct KcpSegment : IKcpSegment
     {
-        readonly unsafe byte* ptr;
+        internal readonly unsafe byte* ptr;
         internal unsafe KcpSegment(byte* intPtr, uint appendDateSize)
         {
             this.ptr = intPtr;
