@@ -9,6 +9,8 @@
 # 新增异步API标准接口
 附带一个基本实现。
 
+# 新增kcpSegment泛型化，可由用户自定义高性能实现。
+
 # 链接：
 
 c: skywind3000 [KCP](https://github.com/skywind3000/kcp)  

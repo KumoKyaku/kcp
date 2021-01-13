@@ -1,3 +1,8 @@
+# v2.2.0
+
+- 公开了KcpSegment
+- KcpSegment泛型化，可由用户自定义高性能实现。
+
 # v2.1.0
 
 - 标准化KCPIO API，主要提供异步API
