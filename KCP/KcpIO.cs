@@ -104,9 +104,9 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
-    
+
     public class KcpIO<Segment> : KcpCore<Segment>, IKcpIO
-        where Segment:IKcpSegment
+        where Segment : IKcpSegment
     {
         OutputQ outq;
         public KcpIO(uint conv_) : base(conv_)
@@ -371,7 +371,7 @@ namespace System.Net.Sockets.Kcp
                 ///至少含有一个完整消息
 
                 List<Segment> kcpSegments = new List<Segment>();
-                
+
                 var recover = false;
                 if (rcv_queue.Count >= rcv_wnd)
                 {
@@ -595,7 +595,7 @@ namespace System.Net.Sockets.Kcp
             Owner.Dispose();
         }
 
-        internal class OutputQ: SimplePipeQueue<(BufferOwner Owner,int Count)>,
+        internal class OutputQ : SimplePipeQueue<(BufferOwner Owner, int Count)>,
             IKcpCallback
         {
             public void Output(BufferOwner buffer, int avalidLength)
@@ -604,4 +604,14 @@ namespace System.Net.Sockets.Kcp
             }
         }
     }
+
+    public class KcpIO : KcpIO<KcpSegment>
+    {
+        public KcpIO(uint conv_)
+            : base(conv_)
+        {
+            SegmentManager = SimpleSegManager.Default;
+        }
+    }
+
 }

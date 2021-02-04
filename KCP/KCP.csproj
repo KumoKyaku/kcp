@@ -5,17 +5,20 @@
     <Authors>云却</Authors>
     
     <!--版本配置-->
-    <AssemblyVersion>2.2.0.0</AssemblyVersion>
-    <FileVersion>2.2.0.0</FileVersion>
-    <Version>2.2.0.0</Version>
+    <AssemblyVersion>2.2.1.0</AssemblyVersion>
+    <FileVersion>2.2.1.0</FileVersion>
+    <Version>2.2.1.0</Version>
     
     <!--包配置-->
     <Product>Kcp</Product>
     <PackageId>Kcp</PackageId>
     <AssemblyName>Kcp</AssemblyName>
     <RootNamespace>System.Net.Sockets.Kcp</RootNamespace>
+    
     <PackageTags>kcp,dotnetstandard2.0,unity</PackageTags>
     <Description>KCP C#版。线程安全，运行时无alloc，对gc无压力。</Description>
+ 
+    <!--仓库配置-->
     <PackageProjectUrl>https://github.com/KumoKyaku/KCP</PackageProjectUrl>
     <RepositoryUrl>https://github.com/KumoKyaku/KCP</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -45,7 +48,9 @@
   <!--基本配置-->
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <NoWarn>1701;1702;1591</NoWarn>
+    <NoWarn>
+      1701;1702;1591;1587
+    </NoWarn>
     
     <!--打包配置-->
     <SignAssembly>true</SignAssembly>
@@ -74,14 +79,12 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <DebugType>portable</DebugType>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>true</Optimize>
-    <DebugType>portable</DebugType>
   </PropertyGroup>
 
 </Project>
