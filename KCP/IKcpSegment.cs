@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace System.Net.Sockets.Kcp
+﻿namespace System.Net.Sockets.Kcp
 {
     public interface IKcpSegment
     {
@@ -21,23 +19,13 @@ namespace System.Net.Sockets.Kcp
         int Encode(Span<byte> buffer);
     }
 
-    public interface ISegmentManager<Segment> where Segment: IKcpSegment
+    public interface ISegmentManager<Segment> where Segment : IKcpSegment
     {
         Segment Alloc(int appendDateSize);
         void Free(Segment seg);
     }
 
-    public class SimpleSegManager: ISegmentManager<KcpSegment>
-    {
-        public static SimpleSegManager Default { get; } = new SimpleSegManager();
-        public KcpSegment Alloc(int appendDateSize)
-        {
-            return KcpSegment.AllocHGlobal(appendDateSize);
-        }
-
-        public void Free(KcpSegment seg)
-        {
-            KcpSegment.FreeHGlobal(seg);
-        }
-    }
 }
+
+
+
