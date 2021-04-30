@@ -29,8 +29,11 @@ namespace TestKCP
             var handle2 = new Handle();
 
             const int conv = 123;
-            var kcp1 = new UnSafeSegManager.Kcp(conv, handle1);
-            var kcp2 = new UnSafeSegManager.Kcp(conv, handle2);
+            //var kcp1 = new UnSafeSegManager.Kcp(conv, handle1);
+            //var kcp2 = new UnSafeSegManager.Kcp(conv, handle2);
+
+            var kcp1 = new PoolSegManager.Kcp(conv, handle1);
+            var kcp2 = new PoolSegManager.Kcp(conv, handle2);
 
             kcp1.NoDelay(1, 10, 2, 1);//fast
             kcp1.WndSize(64, 64);

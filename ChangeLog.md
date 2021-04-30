@@ -1,3 +1,8 @@
+
+# v2.2.3
+
+- 增加PoolSegManager实现，使用Seq对象池，解决内核调用效率低问题。
+
 # v2.2.0
 
 - 公开了KcpSegment
