@@ -53,3 +53,10 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 |                  |                | 增加TryRecv函数，当可以Recv时只peeksize一次。         |
 |                  | ikcp_ack_push  | 删除了此函数（已内联）                                |
 |                  | ikcp_ack_get   | 删除了此函数（已内联）                                |
+
+
+# 赞助链接
+![支付宝](https://github.com/KumoKyaku/KumoKyaku.github.io/blob/develop/source/_posts/%E5%9B%BE%E5%BA%8A/alipay.png)
+
+
+
