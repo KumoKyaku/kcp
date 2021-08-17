@@ -328,7 +328,7 @@ namespace System.Net.Sockets.Kcp
             }
 
             var offset = 0;
-            int flag = 0;
+            //int flag = 0;
             uint maxack = 0;
             while (true)
             {
@@ -428,8 +428,8 @@ namespace System.Net.Sockets.Kcp
                     }
                     Parse_ack(sn);
                     Shrink_buf();
-
-                    if (flag == 0)
+                    Parse_fastack(sn);
+                    /*if (flag == 0)
                     {
                         flag = 1;
                         maxack = sn;
@@ -437,7 +437,7 @@ namespace System.Net.Sockets.Kcp
                     else if (Itimediff(sn, maxack) > 0)
                     {
                         maxack = sn;
-                    }
+                    }*/
 
                 }
                 else if (IKCP_CMD_PUSH == cmd)
@@ -486,10 +486,10 @@ namespace System.Net.Sockets.Kcp
                 offset += (int)length;
             }
 
-            if (flag != 0)
+            /*if (flag != 0)
             {
                 Parse_fastack(maxack);
-            }
+            }*/
 
             if (Itimediff(this.snd_una, temp_una) > 0)
             {
