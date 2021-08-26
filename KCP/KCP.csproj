@@ -3,34 +3,34 @@
   <!--主配置-->
   <PropertyGroup>
     <Authors>云却</Authors>
-    
+
     <!--版本配置-->
     <AssemblyVersion>2.2.3.0</AssemblyVersion>
     <FileVersion>2.2.3.0</FileVersion>
     <Version>2.2.3.0</Version>
-    
+
     <!--包配置-->
     <Product>Kcp</Product>
     <PackageId>Kcp</PackageId>
     <AssemblyName>Kcp</AssemblyName>
     <RootNamespace>System.Net.Sockets.Kcp</RootNamespace>
-    
+
     <PackageTags>kcp,dotnetstandard2.0,unity</PackageTags>
     <Description>KCP C#版。线程安全，运行时无alloc，对gc无压力。</Description>
- 
+
     <!--仓库配置-->
     <PackageProjectUrl>https://github.com/KumoKyaku/KCP</PackageProjectUrl>
     <RepositoryUrl>https://github.com/KumoKyaku/KCP</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    
-  </PropertyGroup> 
-  
+
+  </PropertyGroup>
+
   <!--目标框架配置-->
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.1;netstandard2.0;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard1.1;netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
   </PropertyGroup>
-  
+
   <!--依赖配置-->
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Memory" Version="4.5.4" />
@@ -41,31 +41,31 @@
     <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
   </ItemGroup>
-  
-  
+
+
   <!--以下是项目通用配置-->
-  
+
   <!--基本配置-->
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>
       1701;1702;1591;1587
     </NoWarn>
-    
+
     <!--打包配置-->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    
+
     <!--xml注释生成-->
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
-    
+
     <!--版权配置-->
     <Copyright>Copyright (c) 2019 云却</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-  </PropertyGroup> 
-  
+  </PropertyGroup>
+
   <!--许可证文件配置-->
   <ItemGroup>
     <None Include="..\LICENSE">
@@ -73,14 +73,14 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
-  
+
   <!--调试符号配置-->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
