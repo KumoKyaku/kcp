@@ -1,3 +1,7 @@
+# v2.3.0
+
+- 增加SimpleKcpClient,增加简单Udp例子.
+
 
 # v2.2.3
 
