@@ -39,6 +39,8 @@ namespace System.Net.Sockets.Kcp
 
     public interface IKcpUpdate
     {
+        [Obsolete("Use Update(in DateTimeOffset time) instaed.")]
         void Update(in DateTime time);
+        void Update(in DateTimeOffset time);
     }
 }

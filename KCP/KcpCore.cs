@@ -14,8 +14,8 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public class KcpCore<Segment>: IKcpSetting, IKcpUpdate, IDisposable
-        where Segment:IKcpSegment
+    public class KcpCore<Segment> : IKcpSetting, IKcpUpdate, IDisposable
+        where Segment : IKcpSegment
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -404,7 +404,62 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         /// <param name="time"></param>
         /// <returns></returns>
-        public DateTime Check(DateTime time)
+        public DateTime Check(in DateTime time)
+        {
+            if (CheckDispose())
+            {
+                //检查释放
+                return default;
+            }
+
+            if (updated == 0)
+            {
+                return time;
+            }
+
+            var current_ = time.ConvertTime();
+
+            var ts_flush_ = ts_flush;
+            var tm_flush_ = 0x7fffffff;
+            var tm_packet = 0x7fffffff;
+            var minimal = 0;
+
+            if (Itimediff(current_, ts_flush_) >= 10000 || Itimediff(current_, ts_flush_) < -10000)
+            {
+                ts_flush_ = current_;
+            }
+
+            if (Itimediff(current_, ts_flush_) >= 0)
+            {
+                return time;
+            }
+
+            tm_flush_ = Itimediff(ts_flush_, current_);
+
+            lock (snd_bufLock)
+            {
+                foreach (var seg in snd_buf)
+                {
+                    var diff = Itimediff(seg.resendts, current_);
+                    if (diff <= 0)
+                    {
+                        return time;
+                    }
+
+                    if (diff < tm_packet)
+                    {
+                        tm_packet = diff;
+                    }
+                }
+            }
+
+            minimal = tm_packet < tm_flush_ ? tm_packet : tm_flush_;
+            if (minimal >= interval) minimal = (int)interval;
+
+            return time + TimeSpan.FromMilliseconds(minimal);
+        }
+
+        public DateTimeOffset Check(in DateTimeOffset time)
         {
             if (CheckDispose())
             {
@@ -995,6 +1050,43 @@ namespace System.Net.Sockets.Kcp
                 Flush();
             }
         }
+
+        public void Update(in DateTimeOffset time)
+        {
+            if (CheckDispose())
+            {
+                //检查释放
+                return;
+            }
+
+            current = time.ConvertTime();
+
+            if (updated == 0)
+            {
+                updated = 1;
+                ts_flush = current;
+            }
+
+            var slap = Itimediff(current, ts_flush);
+
+            if (slap >= 10000 || slap < -10000)
+            {
+                ts_flush = current;
+                slap = 0;
+            }
+
+            if (slap >= 0)
+            {
+                ts_flush += interval;
+                if (Itimediff(current, ts_flush) >= 0)
+                {
+                    ts_flush = current + interval;
+                }
+
+                Flush();
+            }
+        }
+
         #endregion
 
         #region 设置控制

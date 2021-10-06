@@ -1,3 +1,18 @@
+---
+## [Unreleased]
+
+### Fixed
+
+### Changed
+
+### Added
+---
+
+# [Unreleased]
+
+### Changed
+- 将时间类型由DateTime改为DateTimeOffset.
+
 # v2.3.0
 
 - 增加SimpleKcpClient,增加简单Udp例子.
