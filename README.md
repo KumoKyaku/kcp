@@ -8,9 +8,9 @@
   - ValueTask Output(IBufferWriter<byte> writer, object option = null);
   - 附带一个基本实现。KcpIO.cs
 - kcpSegment泛型化，可由用户自定义高性能实现。
-  - KcpCore<Segment>  where Segment:IKcpSegment
-  - KcpIO<Segment> : KcpCore<Segment>, IKcpIO  where Segment : IKcpSegment
-  - Kcp<Segment> : KcpCore<Segment> where Segment:IKcpSegment
+  - `KcpCore<Segment>`  where Segment : IKcpSegment
+  - `KcpIO<Segment>` : `KcpCore<Segment>`, IKcpIO  where Segment : IKcpSegment
+  - `Kcp<Segment>` : `KcpCore<Segment>` where Segment:IKcpSegment
 
 ## 链接：
 
