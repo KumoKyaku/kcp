@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-#if NETSTANDARD2_0_OR_GREATER
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
 
 namespace System.Net.Sockets.Kcp.Simple
 {

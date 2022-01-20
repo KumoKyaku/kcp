@@ -15,7 +15,7 @@
     <AssemblyName>Kcp</AssemblyName>
     <RootNamespace>System.Net.Sockets.Kcp</RootNamespace>
 
-    <PackageTags>kcp,dotnetstandard2.0,unity</PackageTags>
+    <PackageTags>kcp, unity</PackageTags>
     <Description>KCP C#版。线程安全，运行时无alloc，对gc无压力。</Description>
 
     <!--仓库配置-->
@@ -28,7 +28,7 @@
 
   <!--目标框架配置-->
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.1;netstandard2.0;netstandard2.1;net5.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard1.1;netstandard2.0;netstandard2.1;net5.0;net6.0;</TargetFrameworks>
   </PropertyGroup>
 
   <!--依赖配置-->

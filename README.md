@@ -1,38 +1,35 @@
 # KCP C#版。
-
-支持目标框架:  
-- dotnetstandard2.0
-- dotnetstandard1.1
-
 开箱即用。也可以使用Nuget 搜索KCP。
 
-# 新增异步API标准接口
-附带一个基本实现。
+## Feature：
 
-# 新增kcpSegment泛型化，可由用户自定义高性能实现。
+- 异步API标准接口 IKcpIO.cs
+  - ValueTask Recv(IBufferWriter<byte> writer, object option = null);
+  - ValueTask Output(IBufferWriter<byte> writer, object option = null);
+  - 附带一个基本实现。KcpIO.cs
+- kcpSegment泛型化，可由用户自定义高性能实现。
+  - KcpCore<Segment>  where Segment:IKcpSegment
+  - KcpIO<Segment> : KcpCore<Segment>, IKcpIO  where Segment : IKcpSegment
+  - Kcp<Segment> : KcpCore<Segment> where Segment:IKcpSegment
 
-# 链接：
+## 链接：
 
 c: skywind3000 [KCP](https://github.com/skywind3000/kcp)  
 go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)  
 
-# 用法：
-
-请参考C版本文档。
-
-# 说明：
+## 说明：
 
 - 内部使用了unsafe代码和非托管内存，不会对gc造成压力。
-
+- 支持用户自定义内存管理方式,如果不想使用unsafe模式,可以使用内存池.
 - 对于output回调和TryRecv函数。使用RentBuffer回调，从外部分配内存。请参考[IMemoryOwner](https://docs.microsoft.com/en-us/dotnet/standard/memory-and-spans/memory-t-usage-guidelines)用法。
 - 支持`Span<byte>`
 
-# 测试：
+## 测试：
 [[已修复]~~同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。~~](Image/deadlock.jpg)
 
 在UnitTestProject1路径下执行 dotnet test 可进行多框架测试。（需要安装dotnetcoreSDK）
 
-# 相对C版的一些变化：
+## 相对C版的一些变化：
 
 | 差异变化         | C版            | C#版                                                  |
 | ---------------- | -------------- | ----------------------------------------------------- |
@@ -55,7 +52,10 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 |                  | ikcp_ack_get   | 删除了此函数（已内联）                                |
 
 
+---
+---
 # 赞助链接
+
 ![支付宝](https://github.com/KumoKyaku/KumoKyaku.github.io/blob/develop/source/_posts/%E5%9B%BE%E5%BA%8A/alipay.png)
 
 
