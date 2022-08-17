@@ -54,30 +54,36 @@ namespace System.Net.Sockets.Kcp
             return res;
         }
 
+        /// <summary>
+        /// TryRecv Recv设计上同一实际只允许一个线程调用。
+        /// 因为要保证数据顺序，多个线程同时调用Recv也没有意义。
+        /// 所以只需要部分加锁即可。
+        /// </summary>
+        /// <returns></returns>
         public (BufferOwner buffer, int avalidLength) TryRecv()
         {
-            if (rcv_queue.Count == 0)
-            {
-                ///没有可用包
-                return (null, -1);
-            }
-
             var peekSize = -1;
-            var seq = rcv_queue[0];
-
-            if (seq.frg == 0)
-            {
-                peekSize = (int)seq.len;
-            }
-
-            if (rcv_queue.Count < seq.frg + 1)
-            {
-                ///没有足够的包
-                return (null, -1);
-            }
-
             lock (rcv_queueLock)
             {
+                if (rcv_queue.Count == 0)
+                {
+                    ///没有可用包
+                    return (null, -1);
+                }
+
+                var seq = rcv_queue[0];
+
+                if (seq.frg == 0)
+                {
+                    peekSize = (int)seq.len;
+                }
+
+                if (rcv_queue.Count < seq.frg + 1)
+                {
+                    ///没有足够的包
+                    return (null, -1);
+                }
+
                 uint length = 0;
 
                 foreach (var item in rcv_queue)
@@ -90,11 +96,11 @@ namespace System.Net.Sockets.Kcp
                 }
 
                 peekSize = (int)length;
-            }
 
-            if (peekSize <= 0)
-            {
-                return (null, -2);
+                if (peekSize <= 0)
+                {
+                    return (null, -2);
+                }
             }
 
             var buffer = CreateBuffer(peekSize);
@@ -194,28 +200,27 @@ namespace System.Net.Sockets.Kcp
         /// <returns></returns>
         public int PeekSize()
         {
-
-            if (rcv_queue.Count == 0)
-            {
-                ///没有可用包
-                return -1;
-            }
-
-            var seq = rcv_queue[0];
-
-            if (seq.frg == 0)
-            {
-                return (int)seq.len;
-            }
-
-            if (rcv_queue.Count < seq.frg + 1)
-            {
-                ///没有足够的包
-                return -1;
-            }
-
             lock (rcv_queueLock)
             {
+                if (rcv_queue.Count == 0)
+                {
+                    ///没有可用包
+                    return -1;
+                }
+
+                var seq = rcv_queue[0];
+
+                if (seq.frg == 0)
+                {
+                    return (int)seq.len;
+                }
+
+                if (rcv_queue.Count < seq.frg + 1)
+                {
+                    ///没有足够的包
+                    return -1;
+                }
+
                 uint length = 0;
 
                 foreach (var item in rcv_queue)
