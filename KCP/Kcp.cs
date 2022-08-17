@@ -10,7 +10,7 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 namespace System.Net.Sockets.Kcp
 {
     public class Kcp<Segment> : KcpCore<Segment>
-        where Segment:IKcpSegment
+        where Segment : IKcpSegment
     {
         /// <summary>
         /// create a new kcp control object, 'conv' must equal in two endpoint
@@ -20,11 +20,11 @@ namespace System.Net.Sockets.Kcp
         /// <param name="callback"></param>
         /// <param name="rentable">可租用内存的回调</param>
         public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
-            :base(conv_)
+            : base(conv_)
         {
             callbackHandle = callback;
             this.rentable = rentable;
-        }      
+        }
 
 
         //extension 重构和新增加的部分============================================
@@ -55,9 +55,9 @@ namespace System.Net.Sockets.Kcp
         }
 
         /// <summary>
-        /// TryRecv Recv设计上同一实际只允许一个线程调用。
-        /// 因为要保证数据顺序，多个线程同时调用Recv也没有意义。
-        /// 所以只需要部分加锁即可。
+        /// TryRecv Recv设计上同一时刻只允许一个线程调用。
+        /// <para/>因为要保证数据顺序，多个线程同时调用Recv也没有意义。
+        /// <para/>所以只需要部分加锁即可。
         /// </summary>
         /// <returns></returns>
         public (BufferOwner buffer, int avalidLength) TryRecv()
@@ -535,7 +535,7 @@ namespace System.Net.Sockets.Kcp
 
     public class Kcp : Kcp<KcpSegment>
     {
-        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null) 
+        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
             : base(conv_, callback, rentable)
         {
             SegmentManager = SimpleSegManager.Default;
