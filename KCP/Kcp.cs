@@ -346,6 +346,8 @@ namespace System.Net.Sockets.Kcp
                     break;
                 }
 
+                #region 大小端处理
+
                 if (IsLittleEndian)
                 {
                     conv_ = BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset));
@@ -399,6 +401,7 @@ namespace System.Net.Sockets.Kcp
                     offset += 4;
                 }
 
+                #endregion
 
                 if (data.Length - offset < length || (int)length < 0)
                 {

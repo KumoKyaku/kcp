@@ -109,39 +109,111 @@ namespace System.Net.Sockets.Kcp
         /// 最大报文段长度
         /// </summary>
         protected uint mss;
+        /// <summary>
+        /// 连接状态（0xFFFFFFFF表示断开连接）
+        /// </summary>
         protected int state;
+        /// <summary>
+        /// 第一个未确认的包
+        /// </summary>
         protected uint snd_una;
+        /// <summary>
+        /// 待发送包的序号
+        /// </summary>
         protected uint snd_nxt;
         /// <summary>
-        /// 下一个等待接收消息ID
+        /// 下一个等待接收消息ID,待接收消息序号
         /// </summary>
         protected uint rcv_nxt;
         protected uint ts_recent;
         protected uint ts_lastack;
+        /// <summary>
+        /// 拥塞窗口阈值
+        /// </summary>
         protected uint ssthresh;
+        /// <summary>
+        /// ack接收rtt浮动值
+        /// </summary>
         protected uint rx_rttval;
+        /// <summary>
+        /// ack接收rtt静态值
+        /// </summary>
         protected uint rx_srtt;
+        /// <summary>
+        /// 由ack接收延迟计算出来的复原时间
+        /// </summary>
         protected uint rx_rto;
+        /// <summary>
+        /// 最小复原时间
+        /// </summary>
         protected uint rx_minrto;
+        /// <summary>
+        /// 发送窗口大小
+        /// </summary>
         protected uint snd_wnd;
+        /// <summary>
+        /// 接收窗口大小
+        /// </summary>
         protected uint rcv_wnd;
+        /// <summary>
+        /// 远端接收窗口大小
+        /// </summary>
         protected uint rmt_wnd;
+        /// <summary>
+        /// 拥塞窗口大小
+        /// </summary>
         protected uint cwnd;
+        /// <summary>
+        /// 探查变量，IKCP_ASK_TELL表示告知远端窗口大小。IKCP_ASK_SEND表示请求远端告知窗口大小
+        /// </summary>
         protected uint probe;
         protected uint current;
+        /// <summary>
+        /// 内部flush刷新间隔
+        /// </summary>
         protected uint interval;
+        /// <summary>
+        /// 下次flush刷新时间戳
+        /// </summary>
         protected uint ts_flush;
         protected uint xmit;
+        /// <summary>
+        /// 是否启动无延迟模式
+        /// </summary>
         protected uint nodelay;
+        /// <summary>
+        /// 是否调用过update函数的标识
+        /// </summary>
         protected uint updated;
+        /// <summary>
+        /// 下次探查窗口的时间戳
+        /// </summary>
         protected uint ts_probe;
+        /// <summary>
+        /// 探查窗口需要等待的时间
+        /// </summary>
         protected uint probe_wait;
+        /// <summary>
+        /// 最大重传次数
+        /// </summary>
         protected uint dead_link;
+        /// <summary>
+        /// 可发送的最大数据量
+        /// </summary>
         protected uint incr;
+        /// <summary>
+        /// 触发快速重传的重复ack个数
+        /// </summary>
         protected int fastresend;
         protected int fastlimit;
+        /// <summary>
+        /// 取消拥塞控制
+        /// </summary>
         protected int nocwnd;
         protected int logmask;
+        /// <summary>
+        /// 是否采用流传输模式
+        /// </summary>
         public int stream;
         protected BufferOwner buffer;
 
@@ -156,8 +228,8 @@ namespace System.Net.Sockets.Kcp
         #region 锁和容器
 
         protected readonly object snd_bufLock = new object();
-        protected readonly object rcv_queueLock = new object();
         protected readonly object rcv_bufLock = new object();
+        protected readonly object rcv_queueLock = new object();
 
         /// <summary>
         /// 发送 ack 队列 
@@ -657,6 +729,10 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
+        /// <summary>
+        /// 处理下层网络收到的数据包
+        /// </summary>
+        /// <param name="newseg"></param>
         internal virtual void Parse_data(Segment newseg)
         {
             var sn = newseg.sn;
