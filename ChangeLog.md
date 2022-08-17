@@ -10,6 +10,9 @@
 
 # [Unreleased]
 
+# v2.4.0
+### Fixed
+- 修复多线程引起的空引用。https://github.com/KumoKyaku/KCP/issues/20
 ### Changed
 - 将时间类型由DateTime改为DateTimeOffset.
 
