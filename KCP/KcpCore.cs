@@ -851,6 +851,12 @@ namespace System.Net.Sockets.Kcp
                         callbackHandle.Output(buffer, offset);
                         offset = 0;
                         buffer = CreateBuffer(BufferNeedSize);
+
+                        //IKcpOutputer outputer = null;
+                        //var span = outputer.GetSpan(offset);
+                        //buffer.Memory.Span.Slice(0, offset).CopyTo(span);
+                        //outputer.Advance(offset);
+                        //outputer.Flush();
                     }
 
                     seg.sn = temp.sn;

@@ -1,4 +1,6 @@
-﻿using BufferOwner = System.Buffers.IMemoryOwner<byte>;
+﻿using System.Threading.Tasks;
+using System.Threading;
+using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
 {
@@ -15,6 +17,16 @@ namespace System.Net.Sockets.Kcp
         /// <returns>不需要返回值</returns>
         /// <remarks>通过增加 avalidLength 能够在协议栈中有效的减少数据拷贝</remarks>
         void Output(BufferOwner buffer, int avalidLength);
+    }
+
+    /// <summary>
+    /// Kcp回调
+    /// </summary>
+    public interface IKcpOutputer
+    {
+        Span<byte> GetSpan(int sizeHint = 0);
+        void Advance(int bytes);
+        void Flush();
     }
 
 

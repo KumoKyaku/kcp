@@ -109,6 +109,59 @@ namespace System.Net.Sockets.Kcp
         }
 
         /// <summary>
+        /// TryRecv Recv设计上同一时刻只允许一个线程调用。
+        /// <para/>因为要保证数据顺序，多个线程同时调用Recv也没有意义。
+        /// <para/>所以只需要部分加锁即可。
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public int TryRecv(IBufferWriter<byte> writer)
+        {
+            var peekSize = -1;
+            lock (rcv_queueLock)
+            {
+                if (rcv_queue.Count == 0)
+                {
+                    ///没有可用包
+                    return -1;
+                }
+
+                var seq = rcv_queue[0];
+
+                if (seq.frg == 0)
+                {
+                    peekSize = (int)seq.len;
+                }
+
+                if (rcv_queue.Count < seq.frg + 1)
+                {
+                    ///没有足够的包
+                    return -1;
+                }
+
+                uint length = 0;
+
+                foreach (var item in rcv_queue)
+                {
+                    length += item.len;
+                    if (item.frg == 0)
+                    {
+                        break;
+                    }
+                }
+
+                peekSize = (int)length;
+
+                if (peekSize <= 0)
+                {
+                    return -2;
+                }
+            }
+
+            return UncheckRecv(writer);
+        }
+
+        /// <summary>
         /// user/upper level recv: returns size, returns below zero for EAGAIN
         /// </summary>
         /// <param name="buffer"></param>
@@ -133,6 +186,35 @@ namespace System.Net.Sockets.Kcp
 
             /// 拆分函数
             var recvLength = UncheckRecv(buffer);
+
+            return recvLength;
+        }
+
+        /// <summary>
+        /// user/upper level recv: returns size, returns below zero for EAGAIN
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public int Recv(IBufferWriter<byte> writer)
+        {
+            if (0 == rcv_queue.Count)
+            {
+                return -1;
+            }
+
+            var peekSize = PeekSize();
+            if (peekSize < 0)
+            {
+                return -2;
+            }
+
+            //if (peekSize > buffer.Length)
+            //{
+            //    return -3;
+            //}
+
+            /// 拆分函数
+            var recvLength = UncheckRecv(writer);
 
             return recvLength;
         }
@@ -195,6 +277,68 @@ namespace System.Net.Sockets.Kcp
         }
 
         /// <summary>
+        /// 这个函数不检查任何参数
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        int UncheckRecv(IBufferWriter<byte> writer)
+        {
+            var recover = false;
+            if (rcv_queue.Count >= rcv_wnd)
+            {
+                recover = true;
+            }
+
+            #region merge fragment.
+            /// merge fragment.
+
+            var recvLength = 0;
+            lock (rcv_queueLock)
+            {
+                var count = 0;
+                foreach (var seg in rcv_queue)
+                {
+                    var len = (int)seg.len;
+                    var destination = writer.GetSpan(len);
+
+                    seg.data.CopyTo(destination);
+                    writer.Advance(len);
+
+                    recvLength += len;
+
+                    count++;
+                    int frg = seg.frg;
+
+                    SegmentManager.Free(seg);
+                    if (frg == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (count > 0)
+                {
+                    rcv_queue.RemoveRange(0, count);
+                }
+            }
+
+            #endregion
+
+            Move_Rcv_buf_2_Rcv_queue();
+
+            #region fast recover
+            /// fast recover
+            if (rcv_queue.Count < rcv_wnd && recover)
+            {
+                // ready to send back IKCP_CMD_WINS in ikcp_flush
+                // tell remote my window size
+                probe |= IKCP_ASK_TELL;
+            }
+            #endregion
+            return recvLength;
+        }
+
+        /// <summary>
         /// check the size of next message in the recv queue
         /// </summary>
         /// <returns></returns>
@@ -223,10 +367,10 @@ namespace System.Net.Sockets.Kcp
 
                 uint length = 0;
 
-                foreach (var item in rcv_queue)
+                foreach (var seg in rcv_queue)
                 {
-                    length += item.len;
-                    if (item.frg == 0)
+                    length += seg.len;
+                    if (seg.frg == 0)
                     {
                         break;
                     }
