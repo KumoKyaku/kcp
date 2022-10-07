@@ -346,6 +346,7 @@ namespace System.Net.Sockets.Kcp
         }
 
         SimplePipeQueue<List<Segment>> recvSignal = new SimplePipeQueue<List<Segment>>();
+        //SimplePipeQueue<Segment[]> recvSignal = new SimplePipeQueue<Segment[]>();
         private void FastChechRecv()
         {
             if (rcv_queue.Count == 0)
@@ -358,7 +359,7 @@ namespace System.Net.Sockets.Kcp
 
             if (seq.frg == 0)
             {
-                return;
+                //return;
             }
 
             if (rcv_queue.Count < seq.frg + 1)
@@ -371,7 +372,7 @@ namespace System.Net.Sockets.Kcp
                 ///至少含有一个完整消息
 
                 List<Segment> kcpSegments = new List<Segment>();
-
+                //Segment[] kcpSegments = ArrayPool<Segment>.Shared.Rent(seq.frg + 1);
                 var recover = false;
                 if (rcv_queue.Count >= rcv_wnd)
                 {
@@ -387,7 +388,7 @@ namespace System.Net.Sockets.Kcp
                     foreach (var seg in rcv_queue)
                     {
                         kcpSegments.Add(seg);
-
+                        //kcpSegments[count] = seg;
                         count++;
                         int frg = seg.frg;
 
@@ -430,6 +431,7 @@ namespace System.Net.Sockets.Kcp
                 WriteRecv(writer, seg);
             }
             list.Clear();
+            //ArrayPool<Segment>.Shared.Return(list,true);
         }
 
         private void WriteRecv(IBufferWriter<byte> writer, Segment seg)
@@ -605,6 +607,7 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
+    [Obsolete("Use SimpleSegManager.KcpIO")]
     public class KcpIO : KcpIO<KcpSegment>
     {
         public KcpIO(uint conv_)

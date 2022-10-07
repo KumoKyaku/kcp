@@ -9,6 +9,8 @@
 -->
 
 # [Unreleased]
+### Fixed
+- 修复KcpIO，Recv异步不触发Bug。
 
 # v2.4.0
 ### Fixed

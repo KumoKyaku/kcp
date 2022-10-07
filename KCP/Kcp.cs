@@ -677,6 +677,7 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
+    [Obsolete("Use SimpleSegManager.Kcp")]
     public class Kcp : Kcp<KcpSegment>
     {
         public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)

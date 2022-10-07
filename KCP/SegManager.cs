@@ -5,6 +5,9 @@ using System.Buffers.Binary;
 
 namespace System.Net.Sockets.Kcp
 {
+    /// <summary>
+    /// 动态申请非托管内存
+    /// </summary>
     public class SimpleSegManager : ISegmentManager<KcpSegment>
     {
         public static SimpleSegManager Default { get; } = new SimpleSegManager();
@@ -17,10 +20,28 @@ namespace System.Net.Sockets.Kcp
         {
             KcpSegment.FreeHGlobal(seg);
         }
+
+        public class Kcp : Kcp<KcpSegment>
+        {
+            public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
+                : base(conv_, callback, rentable)
+            {
+                SegmentManager = Default;
+            }
+        }
+
+        public class KcpIO : KcpIO<KcpSegment>
+        {
+            public KcpIO(uint conv_)
+                : base(conv_)
+            {
+                SegmentManager = Default;
+            }
+        }
     }
 
     /// <summary>
-    /// 使用这个就不能SetMtu了，大小已经写死
+    /// 申请固定大小非托管内存。使用这个就不能SetMtu了，大小已经写死。
     /// </summary>
     /// <remarks>需要大量测试</remarks>
     public unsafe class UnSafeSegManager : ISegmentManager<KcpSegment>
@@ -93,6 +114,15 @@ namespace System.Net.Sockets.Kcp
         {
             public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
                 : base(conv_, callback, rentable)
+            {
+                SegmentManager = Default;
+            }
+        }
+
+        public class KcpIO : KcpIO<KcpSegment>
+        {
+            public KcpIO(uint conv_)
+                : base(conv_)
             {
                 SegmentManager = Default;
             }
@@ -215,6 +245,15 @@ namespace System.Net.Sockets.Kcp
         {
             public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
                 : base(conv_, callback, rentable)
+            {
+                SegmentManager = Default;
+            }
+        }
+
+        public class KcpIO : KcpIO<Seg>
+        {
+            public KcpIO(uint conv_)
+                : base(conv_)
             {
                 SegmentManager = Default;
             }
