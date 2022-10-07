@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
+using static System.Net.Sockets.Kcp.PoolSegManager;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
@@ -345,8 +346,8 @@ namespace System.Net.Sockets.Kcp
             FastChechRecv();
         }
 
-        SimplePipeQueue<List<Segment>> recvSignal = new SimplePipeQueue<List<Segment>>();
-        //SimplePipeQueue<Segment[]> recvSignal = new SimplePipeQueue<Segment[]>();
+        //SimplePipeQueue<List<Segment>> recvSignal = new SimplePipeQueue<List<Segment>>();
+        SimplePipeQueue<ArraySegment<Segment>> recvSignal = new SimplePipeQueue<ArraySegment<Segment>>();
         private void FastChechRecv()
         {
             if (rcv_queue.Count == 0)
@@ -362,7 +363,8 @@ namespace System.Net.Sockets.Kcp
                 //return;
             }
 
-            if (rcv_queue.Count < seq.frg + 1)
+            int segCount = seq.frg + 1;
+            if (rcv_queue.Count < segCount)
             {
                 ///没有足够的包
                 return;
@@ -371,8 +373,8 @@ namespace System.Net.Sockets.Kcp
             {
                 ///至少含有一个完整消息
 
-                List<Segment> kcpSegments = new List<Segment>();
-                //Segment[] kcpSegments = ArrayPool<Segment>.Shared.Rent(seq.frg + 1);
+                //List<Segment> kcpSegments = new List<Segment>();
+                Segment[] kcpSegments = ArrayPool<Segment>.Shared.Rent(segCount);
                 var recover = false;
                 if (rcv_queue.Count >= rcv_wnd)
                 {
@@ -387,8 +389,8 @@ namespace System.Net.Sockets.Kcp
                     var count = 0;
                     foreach (var seg in rcv_queue)
                     {
-                        kcpSegments.Add(seg);
-                        //kcpSegments[count] = seg;
+                        //kcpSegments.Add(seg);
+                        kcpSegments[count] = seg;
                         count++;
                         int frg = seg.frg;
 
@@ -418,20 +420,26 @@ namespace System.Net.Sockets.Kcp
                 }
                 #endregion
 
-                recvSignal.Write(kcpSegments);
+                recvSignal.Write(new ArraySegment<Segment>(kcpSegments, 0, segCount));
             }
         }
 
         public async ValueTask Recv(IBufferWriter<byte> writer, object option = null)
         {
             FastChechRecv();
-            var list = await recvSignal.ReadAsync().ConfigureAwait(false);
-            foreach (var seg in list)
+            //var list = await recvSignal.ReadAsync().ConfigureAwait(false);
+            //foreach (var seg in list)
+            //{
+            //    WriteRecv(writer, seg);
+            //}
+            //list.Clear();
+
+            var arraySegment = await recvSignal.ReadAsync().ConfigureAwait(false);
+            for (int i = arraySegment.Offset; i < arraySegment.Count; i++)
             {
-                WriteRecv(writer, seg);
+                WriteRecv(writer, arraySegment.Array[i]);
             }
-            list.Clear();
-            //ArrayPool<Segment>.Shared.Return(list,true);
+            ArrayPool<Segment>.Shared.Return(arraySegment.Array, true);
         }
 
         private void WriteRecv(IBufferWriter<byte> writer, Segment seg)
