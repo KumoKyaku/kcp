@@ -278,7 +278,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
         [TestMethod]
         public void TestKcpSegmentFree()
         {
-            //KcpSegment.FreeHGlobal(default);
+            KcpSegment.FreeHGlobal(default);
         }
 
 
