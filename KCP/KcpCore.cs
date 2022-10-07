@@ -693,8 +693,8 @@ namespace System.Net.Sockets.Kcp
                     var seg = snd_buf.First.Value;
                     if (Itimediff(una, seg.sn) > 0)
                     {
-                        SegmentManager.Free(seg);
                         snd_buf.RemoveFirst();
+                        SegmentManager.Free(seg);
                     }
                     else
                     {

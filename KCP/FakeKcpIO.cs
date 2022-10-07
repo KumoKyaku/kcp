@@ -11,7 +11,7 @@ namespace System.Net.Sockets.Kcp
     /// </summary>
     public class FakeKcpIO : IKcpIO
     {
-        SimplePipeQueue<byte[]> recv = new SimplePipeQueue<byte[]>();
+        QueuePipe<byte[]> recv = new QueuePipe<byte[]>();
         public int Input(ReadOnlySpan<byte> span)
         {
             byte[] buffer = new byte[span.Length];
@@ -36,7 +36,7 @@ namespace System.Net.Sockets.Kcp
         }
 
 
-        SimplePipeQueue<byte[]> send = new SimplePipeQueue<byte[]>();
+        QueuePipe<byte[]> send = new QueuePipe<byte[]>();
         public int Send(ReadOnlySpan<byte> span, object option = null)
         {
             byte[] buffer = new byte[span.Length];
