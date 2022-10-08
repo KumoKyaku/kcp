@@ -7,9 +7,10 @@ using System.Text;
 
 namespace System.Net.Sockets.Kcp
 {
-    internal static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
+    public static class KcpExtension_FDF71D0BC31D49C48EEA8FAA51F017D4
     {
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        [Obsolete("",true)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ConvertTime(this in DateTime time)
         {
@@ -18,9 +19,21 @@ namespace System.Net.Sockets.Kcp
 
         private static readonly DateTimeOffset utc1970 = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint ConvertTime(this in DateTimeOffset time)
+        public static uint ConvertTimeOld(this in DateTimeOffset time)
         {
             return (uint)(Convert.ToInt64(time.Subtract(utc1970).TotalMilliseconds) & 0xffffffff);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ConvertTime2(this in DateTimeOffset time)
+        {
+            return (uint)(time.ToUnixTimeMilliseconds() & 0xffffffff);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ConvertTime(this in DateTimeOffset time)
+        {
+            return (uint)(time.ToUnixTimeMilliseconds());
         }
     }
 }

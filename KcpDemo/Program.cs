@@ -115,7 +115,7 @@ namespace TestKCP
                     int updateCount = 0;
                     while (true)
                     {
-                        kcp1.Update(DateTime.UtcNow);
+                        kcp1.Update(DateTimeOffset.UtcNow);
 
                         int len;
                         while ((len = kcp1.PeekSize()) > 0)
@@ -149,7 +149,7 @@ namespace TestKCP
                     int updateCount = 0;
                     while (true)
                     {
-                        kcp2.Update(DateTime.UtcNow);
+                        kcp2.Update(DateTimeOffset.UtcNow);
 
                         //var utcNow = DateTime.UtcNow;
                         //var res = kcp2.Check(utcNow);

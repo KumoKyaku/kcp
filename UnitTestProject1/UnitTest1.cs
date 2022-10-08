@@ -7,6 +7,24 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Runtime.InteropServices;
 
+namespace System.Net.Sockets.Kcp.Tests
+{
+    [TestClass()]
+    public class UnitTest1
+    {
+        [TestMethod()]
+        public void ConvertTimeTest()
+        {
+            DateTimeOffset dateTime = new DateTimeOffset(2000, 1, 1, 0, 0, 0, default);
+            var t1 = dateTime.ConvertTime();
+            var t2 = dateTime.ConvertTime2();
+            var t3 = dateTime.ConvertTimeOld();
+            Assert.AreEqual(t1, t3);
+            Assert.AreEqual(t2, t3);
+        }
+    }
+}
+
 namespace UnitTestProject1
 {
     public class Handle : IKcpCallback
@@ -34,7 +52,7 @@ namespace UnitTestProject1
         {
             using (buffer)
             {
-                Out(buffer.Memory.Slice(0,avalidLength));
+                Out(buffer.Memory.Slice(0, avalidLength));
             }
         }
     }
@@ -202,7 +220,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 {
                     while (true)
                     {
-                        kcp1.Update(DateTime.UtcNow);
+                        kcp1.Update(DateTimeOffset.UtcNow);
                         int len;
                         while ((len = kcp1.PeekSize()) > 0)
                         {
@@ -228,7 +246,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
                 {
                     while (true)
                     {
-                        kcp2.Update(DateTime.UtcNow);
+                        kcp2.Update(DateTimeOffset.UtcNow);
                         int len;
                         //while ((len = kcp2.PeekSize()) > 0)
                         //{

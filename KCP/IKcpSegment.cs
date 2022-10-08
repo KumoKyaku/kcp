@@ -23,7 +23,7 @@
         /// </summary>
         ushort wnd { get; set; }
         /// <summary>
-        /// 发送时的时间戳
+        /// 发送时的时间戳 <seealso cref="DateTimeOffset.ToUnixTimeMilliseconds"/>
         /// </summary>
         uint ts { get; set; }
         /// <summary>

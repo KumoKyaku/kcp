@@ -19,7 +19,7 @@ namespace TestClient
             {
                 while (true)
                 {
-                    kcpClient.kcp.Update(DateTime.UtcNow);
+                    kcpClient.kcp.Update(DateTimeOffset.UtcNow);
                     await Task.Delay(10);
                 }
             });

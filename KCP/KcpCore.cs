@@ -463,19 +463,7 @@ namespace System.Net.Sockets.Kcp
 
         //功能函数
 
-        /// <summary>
-        /// Determine when should you invoke ikcp_update:
-        /// returns when you should invoke ikcp_update in millisec, if there
-        /// is no ikcp_input/_send calling. you can call ikcp_update in that
-        /// time, instead of call update repeatly.
-        /// <para></para>
-        /// Important to reduce unnacessary ikcp_update invoking. use it to
-        /// schedule ikcp_update (eg. implementing an epoll-like mechanism,
-        /// or optimize ikcp_update when handling massive kcp connections)
-        /// <para></para>
-        /// </summary>
-        /// <param name="time"></param>
-        /// <returns></returns>
+        [Obsolete("Use Check(in DateTimeOffset time) instead.", true)]
         public DateTime Check(in DateTime time)
         {
             if (CheckDispose())
@@ -531,6 +519,19 @@ namespace System.Net.Sockets.Kcp
             return time + TimeSpan.FromMilliseconds(minimal);
         }
 
+        /// <summary>
+        /// Determine when should you invoke ikcp_update:
+        /// returns when you should invoke ikcp_update in millisec, if there
+        /// is no ikcp_input/_send calling. you can call ikcp_update in that
+        /// time, instead of call update repeatly.
+        /// <para></para>
+        /// Important to reduce unnacessary ikcp_update invoking. use it to
+        /// schedule ikcp_update (eg. implementing an epoll-like mechanism,
+        /// or optimize ikcp_update when handling massive kcp connections)
+        /// <para></para>
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
         public DateTimeOffset Check(in DateTimeOffset time)
         {
             if (CheckDispose())
@@ -1097,6 +1098,7 @@ namespace System.Net.Sockets.Kcp
         /// ikcp_check when to call it again (without ikcp_input/_send calling).
         /// </summary>
         /// <param name="time">DateTime.UtcNow</param>
+        [Obsolete("Use Update(in DateTimeOffset time) instead.", true)]
         public void Update(in DateTime time)
         {
             if (CheckDispose())
