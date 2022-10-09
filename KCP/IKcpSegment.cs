@@ -11,11 +11,17 @@
         /// </summary>
         uint conv { get; set; }
         /// <summary>
-        /// 指令类型 ACK报文、数据报文、探测window报文、响应窗口报文四种
+        /// 指令类型
         /// </summary>
+        /// <remarks>
+        /// <para/> IKCP_CMD_PUSH = 81                 // cmd: push data 数据报文
+        /// <para/> IKCP_CMD_ACK  = 82                 // cmd: ack 确认报文
+        /// <para/> IKCP_CMD_WASK = 83                 // cmd: window probe (ask) 窗口探测报文,询问对端剩余接收窗口的大小.
+        /// <para/> IKCP_CMD_WINS = 84                 // cmd: window size (tell) 窗口通知报文,通知对端剩余接收窗口的大小.
+        /// </remarks>
         byte cmd { get; set; }
         /// <summary>
-        /// 分片编号 倒数第几个seg。主要就是用来合并一块被分段的数据。
+        /// 剩余分片数量，表示随后还有多少个报文属于同一个包。
         /// </summary>
         byte frg { get; set; }
         /// <summary>

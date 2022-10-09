@@ -10,6 +10,7 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 namespace System.Net.Sockets.Kcp
 {
     /// <summary>
+    /// https://luyuhuang.tech/2020/12/09/kcp.html
     /// https://github.com/skywind3000/kcp/wiki/Network-Layer
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
@@ -63,14 +64,35 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_RTO_MIN = 100; // normal min rto
         public const int IKCP_RTO_DEF = 200;
         public const int IKCP_RTO_MAX = 60000;
+        /// <summary>
+        /// 数据报文
+        /// </summary>
         public const int IKCP_CMD_PUSH = 81; // cmd: push data
+        /// <summary>
+        /// 确认报文
+        /// </summary>
         public const int IKCP_CMD_ACK = 82; // cmd: ack
+        /// <summary>
+        /// 窗口探测报文,询问对端剩余接收窗口的大小.
+        /// </summary>
         public const int IKCP_CMD_WASK = 83; // cmd: window probe (ask)
+        /// <summary>
+        /// 窗口通知报文,通知对端剩余接收窗口的大小.
+        /// </summary>
         public const int IKCP_CMD_WINS = 84; // cmd: window size (tell)
+        /// <summary>
+        /// IKCP_ASK_SEND表示请求远端告知窗口大小
+        /// </summary>
         public const int IKCP_ASK_SEND = 1;  // need to send IKCP_CMD_WASK
+        /// <summary>
+        /// IKCP_ASK_TELL表示告知远端窗口大小。
+        /// </summary>
         public const int IKCP_ASK_TELL = 2;  // need to send IKCP_CMD_WINS
         public const int IKCP_WND_SND = 32;
         public const int IKCP_WND_RCV = 128; // must >= max fragment size
+        /// <summary>
+        /// 默认最大传输单元 常见路由值 1492 1480  默认1400保证在路由层不会被分片
+        /// </summary>
         public const int IKCP_MTU_DEF = 1400;
         public const int IKCP_ACK_FAST = 3;
         public const int IKCP_INTERVAL = 100;
@@ -78,6 +100,9 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_DEADLINK = 20;
         public const int IKCP_THRESH_INIT = 2;
         public const int IKCP_THRESH_MIN = 2;
+        /// <summary>
+        /// 窗口探查CD
+        /// </summary>
         public const int IKCP_PROBE_INIT = 7000;   // 7 secs to probe window size
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
         public const int IKCP_FASTACK_LIMIT = 5;		// max times to trigger fastack
@@ -140,7 +165,7 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         protected uint rx_srtt;
         /// <summary>
-        /// 由ack接收延迟计算出来的复原时间
+        /// 由ack接收延迟计算出来的复原时间。Retransmission TimeOut(RTO), 超时重传时间.
         /// </summary>
         protected uint rx_rto;
         /// <summary>
@@ -742,6 +767,7 @@ namespace System.Net.Sockets.Kcp
             {
                 if (Itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || Itimediff(sn, rcv_nxt) < 0)
                 {
+                    // 如果接收到数据报文的编号大于 rcv_nxt + rcv_wnd 或小于 rcv_nxt, 这个报文就会被丢弃.
                     SegmentManager.Free(newseg);
                     return;
                 }
@@ -793,6 +819,12 @@ namespace System.Net.Sockets.Kcp
 
             if (waitCount < rcv_wnd)
             {
+                //Q:为什么要减去nrcv_que，rcv_queue中已经排好序了，还要算在接收窗口内，感觉不能理解？
+                //现在问题是如果一个超大数据包，分片数大于rcv_wnd接收窗口，会导致rcv_wnd持续为0，阻塞整个流程。
+                //个人理解，rcv_queue中的数据是已经确认的数据，无论用户是否recv，都不应该影响收发。
+                //A:现在在发送出加一个分片数检测，过大直接抛出异常。防止阻塞发送。
+                //在接收端也加一个检测，如果（frg+1）分片数 > rcv_wnd,也要抛出一个异常或者警告。至少有个提示。
+
                 /// fix https://github.com/skywind3000/kcp/issues/126
                 /// 实际上 rcv_wnd 不应该大于65535
                 var count = rcv_wnd - waitCount;
@@ -987,6 +1019,7 @@ namespace System.Net.Sockets.Kcp
                     var debug = Itimediff(current_, segment.resendts);
                     if (segment.xmit == 0)
                     {
+                        //新加入 snd_buf 中, 从未发送过的报文直接发送出去;
                         needsend = true;
                         segment.xmit++;
                         segment.rto = rx_rto;
@@ -994,6 +1027,7 @@ namespace System.Net.Sockets.Kcp
                     }
                     else if (Itimediff(current_, segment.resendts) >= 0)
                     {
+                        //发送过的, 但是在 RTO 内未收到 ACK 的报文, 需要重传;
                         needsend = true;
                         segment.xmit++;
                         this.xmit++;
@@ -1011,6 +1045,7 @@ namespace System.Net.Sockets.Kcp
                     }
                     else if (segment.fastack >= resent)
                     {
+                        //发送过的, 但是 ACK 失序若干次的报文, 需要执行快速重传.
                         if (segment.xmit <= fastlimit
                             || fastlimit <= 0)
                         {
@@ -1058,7 +1093,7 @@ namespace System.Net.Sockets.Kcp
             #endregion
 
             #region update ssthresh
-            // update ssthresh
+            // update ssthresh 根据丢包情况计算 ssthresh 和 cwnd.
             if (change != 0)
             {
                 var inflight = snd_nxt - snd_una;
@@ -1181,6 +1216,9 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         /// <param name="mtu"></param>
         /// <returns></returns>
+        /// <remarks>
+        /// 如果没有必要，不要修改Mtu。过小的Mtu会导致分片数大于接收窗口，造成kcp阻塞冻结。
+        /// </remarks>
         public int SetMtu(int mtu)
         {
             if (mtu < 50 || mtu < IKCP_OVERHEAD)
