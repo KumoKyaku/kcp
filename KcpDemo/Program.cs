@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Net.Sockets.Kcp;
 using System.Text;
 using System.Threading;
@@ -19,6 +20,14 @@ namespace TestKCP
             }
         }
 
+        public class TL: ConsoleTraceListener
+        {
+            public override void WriteLine(string message, string category)
+            {
+                base.WriteLine(message, $"[{Name}]  {category}");
+            }
+        }
+
 
         static void Main(string[] args)
         {
@@ -34,7 +43,8 @@ namespace TestKCP
 
             var kcp1 = new PoolSegManager.Kcp(conv, handle1);
             var kcp2 = new PoolSegManager.Kcp(conv, handle2);
-
+            kcp1.TraceListener = new TL() { Name = "Kcp1" };
+            kcp2.TraceListener = new TL() { Name = "Kcp2" };
             kcp1.NoDelay(1, 10, 2, 1);//fast
             kcp1.WndSize(128, 128);
             //kcp1.SetMtu(512);

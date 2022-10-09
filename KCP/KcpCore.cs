@@ -1,9 +1,7 @@
-﻿using System.Buffers;
-using System.Buffers.Binary;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using static System.Math;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
@@ -15,7 +13,7 @@ namespace System.Net.Sockets.Kcp
     /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
     /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
     /// </summary>
-    public class KcpCore<Segment> : IKcpSetting, IKcpUpdate, IDisposable
+    public partial class KcpCore<Segment> : IKcpSetting, IKcpUpdate, IDisposable
         where Segment : IKcpSegment
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
@@ -108,7 +106,7 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         public const int IKCP_PROBE_INIT = 7000;   // 7 secs to probe window size
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
-        public const int IKCP_FASTACK_LIMIT = 5;		// max times to trigger fastack
+        public const int IKCP_FASTACK_LIMIT = 5;        // max times to trigger fastack
         #endregion
 
         #region kcp members
@@ -796,6 +794,11 @@ namespace System.Net.Sockets.Kcp
 
                 if (!repeat)
                 {
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    TraceListener?.WriteLine($"{newseg.ToLogString()}", "Parse_data");
+#endif
+
                     if (p == null)
                     {
                         rcv_buf.AddFirst(newseg);
@@ -1081,11 +1084,19 @@ namespace System.Net.Sockets.Kcp
                             buffer = CreateBuffer(BufferNeedSize);
                         }
 
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                        TraceListener?.WriteLine($"{segment.ToLogString(true)}", "needsend");
+#endif
+
                         offset += segment.Encode(buffer.Memory.Span.Slice(offset));
 
                         if (segment.xmit >= dead_link)
                         {
                             state = -1;
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                            TraceListener?.WriteLine($"state = -1; 断开连接", "dead_link");
+#endif
                         }
                     }
                 }
