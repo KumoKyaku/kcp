@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.Sockets.Kcp;
@@ -15,6 +16,7 @@ namespace TestClient
             Console.WriteLine("Press F1 send word.......");
 
             SimpleKcpClient kcpClient = new SimpleKcpClient(50001, end);
+            kcpClient.kcp.TraceListener = new ConsoleTraceListener();
             Task.Run(async () =>
             {
                 while (true)

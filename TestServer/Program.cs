@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.Sockets.Kcp.Simple;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace TestServer
             Console.WriteLine("Hello World!");
 
             SimpleKcpClient kcpClient = new SimpleKcpClient(40001);
+            kcpClient.kcp.TraceListener = new ConsoleTraceListener();
             Task.Run(async () =>
             {
                 while (true)
