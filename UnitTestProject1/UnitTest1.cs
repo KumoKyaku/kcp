@@ -173,12 +173,7 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
             ///kcp设置
             ///https://github.com/skywind3000/kcp/issues/39#issuecomment-244592173
             kcp1.NoDelay(1, 10, 2, 1);//fast
-            kcp1.WndSize(64, 64);
-            kcp1.SetMtu(512);
-
             kcp2.NoDelay(1, 10, 2, 1);//fast
-            kcp2.WndSize(64, 64);
-            kcp2.SetMtu(512);
 
             var sendbyte = Encoding.ASCII.GetBytes(message);
 

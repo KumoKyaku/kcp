@@ -36,12 +36,12 @@ namespace TestKCP
             var kcp2 = new PoolSegManager.Kcp(conv, handle2);
 
             kcp1.NoDelay(1, 10, 2, 1);//fast
-            kcp1.WndSize(64, 64);
-            kcp1.SetMtu(512);
+            kcp1.WndSize(128, 128);
+            //kcp1.SetMtu(512);
 
             kcp2.NoDelay(1, 10, 2, 1);//fast
-            kcp2.WndSize(64, 64);
-            kcp2.SetMtu(512);
+            kcp2.WndSize(128, 128);
+            //kcp2.SetMtu(512);
 
             var sendbyte = Encoding.ASCII.GetBytes(UnitTest1.message);
 

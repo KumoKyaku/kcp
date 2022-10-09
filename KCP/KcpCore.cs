@@ -89,6 +89,9 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         public const int IKCP_ASK_TELL = 2;  // need to send IKCP_CMD_WINS
         public const int IKCP_WND_SND = 32;
+        /// <summary>
+        /// 接收窗口默认值。必须大于最大分片数
+        /// </summary>
         public const int IKCP_WND_RCV = 128; // must >= max fragment size
         /// <summary>
         /// 默认最大传输单元 常见路由值 1492 1480  默认1400保证在路由层不会被分片
@@ -1210,16 +1213,7 @@ namespace System.Net.Sockets.Kcp
 
         #region 设置控制
 
-        /// <summary>
-        /// change MTU size, default is 1400
-        /// <para>** 这个方法不是线程安全的。请在没有发送和接收时调用 。</para>
-        /// </summary>
-        /// <param name="mtu"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// 如果没有必要，不要修改Mtu。过小的Mtu会导致分片数大于接收窗口，造成kcp阻塞冻结。
-        /// </remarks>
-        public int SetMtu(int mtu)
+        public int SetMtu(int mtu = IKCP_MTU_DEF)
         {
             if (mtu < 50 || mtu < IKCP_OVERHEAD)
             {
@@ -1260,14 +1254,6 @@ namespace System.Net.Sockets.Kcp
             return 0;
         }
 
-        /// <summary>
-        /// fastest: ikcp_nodelay(kcp, 1, 20, 2, 1)
-        /// </summary>
-        /// <param name="nodelay_">0:disable(default), 1:enable</param>
-        /// <param name="interval_">internal update timer interval in millisec, default is 100ms</param>
-        /// <param name="resend_">0:disable fast resend(default), 1:enable fast resend</param>
-        /// <param name="nc_">0:normal congestion control(default), 1:disable congestion control</param>
-        /// <returns></returns>
         public int NoDelay(int nodelay_, int interval_, int resend_, int nc_)
         {
 
@@ -1297,13 +1283,7 @@ namespace System.Net.Sockets.Kcp
             return Interval(interval_);
         }
 
-        /// <summary>
-        /// set maximum window size: sndwnd=32, rcvwnd=32 by default
-        /// </summary>
-        /// <param name="sndwnd"></param>
-        /// <param name="rcvwnd"></param>
-        /// <returns></returns>
-        public int WndSize(int sndwnd, int rcvwnd)
+        public int WndSize(int sndwnd = IKCP_WND_SND, int rcvwnd = IKCP_WND_RCV)
         {
             if (sndwnd > 0)
             {
