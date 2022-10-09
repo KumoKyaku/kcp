@@ -799,6 +799,13 @@ namespace System.Net.Sockets.Kcp
                     if (p == null)
                     {
                         rcv_buf.AddFirst(newseg);
+                        if (newseg.frg + 1 > rcv_wnd)
+                        {
+                            //分片数大于接收窗口，造成kcp阻塞冻结。
+                            //Console.WriteLine($"分片数大于接收窗口，造成kcp阻塞冻结。frgCount:{newseg.frg + 1}  rcv_wnd:{rcv_wnd}");
+                            //百分之百阻塞冻结，打印日志没有必要。直接抛出异常。
+                            throw new NotSupportedException($"分片数大于接收窗口，造成kcp阻塞冻结。frgCount:{newseg.frg + 1}  rcv_wnd:{rcv_wnd}");
+                        }
                     }
                     else
                     {
