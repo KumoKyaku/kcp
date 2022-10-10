@@ -1,14 +1,38 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 <!--
-## [Unreleased]
+## [Unreleased] - YYYY-MM-NN
 
-### Fixed
-
-### Changed
-
-### Added
+### Added   
+### Changed  
+### Deprecated  
+### Removed  
+### Fixed  
+### Security  
 -->
 
-# [Unreleased]
+## [2.5.0] - 2022-10-10
+
+### Added   
+- 增加注释。修复默认窗口值。
+- 增加  throw new NotSupportedException($"分片数大于接收窗口，造成kcp阻塞冻结。frgCount:{newseg.frg + 1}  rcv_wnd:{rcv_wnd}");
+- 提取Input接口
+- 增加IKCP_LOG
+
+### Changed  
+- 使用共享数组优化List
+- 统一使用Utc时间戳
+### Deprecated  
+### Removed  
+### Fixed  
+- 修复KcpIO接收过程中的死锁
+### Security  
+
+# [v2.4.1]
 ### Fixed
 - 修复KcpIO，Recv异步不触发Bug。
 
