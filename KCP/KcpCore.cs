@@ -1649,28 +1649,31 @@ namespace System.Net.Sockets.Kcp
             {
                 if (cwnd < rmt_wnd)
                 {
-                    var mss_ = mss;
                     if (cwnd < ssthresh)
                     {
                         cwnd++;
-                        incr += mss_;
+                        incr += mss;
                     }
                     else
                     {
-                        if (incr < mss_)
+                        if (incr < mss)
                         {
-                            incr = mss_;
+                            incr = mss;
                         }
-                        incr += (mss_ * mss_) / incr + (mss_ / 16);
-                        if ((cwnd + 1) * mss_ <= incr)
+                        incr += (mss * mss) / incr + (mss / 16);
+                        if ((cwnd + 1) * mss <= incr)
                         {
+#if true
+                            cwnd = (incr + mss - 1) / ((mss > 0) ? mss : 1);
+#else
                             cwnd++;
+#endif
                         }
                     }
                     if (cwnd > rmt_wnd)
                     {
                         cwnd = rmt_wnd;
-                        incr = rmt_wnd * mss_;
+                        incr = rmt_wnd * mss;
                     }
                 }
             }
