@@ -734,7 +734,7 @@ namespace System.Net.Sockets.Kcp
 
         }
 
-        protected void Parse_fastack(uint sn)
+        protected void Parse_fastack(uint sn, uint ts)
         {
             if (Itimediff(sn, snd_una) < 0 || Itimediff(sn, snd_nxt) >= 0)
             {
@@ -752,7 +752,14 @@ namespace System.Net.Sockets.Kcp
                     }
                     else if (sn != seg.sn)
                     {
+#if !IKCP_FASTACK_CONSERVE
                         seg.fastack++;
+#else
+                        if (Itimediff(ts, seg.ts) >= 0)
+                        {
+                            seg.fastack++;
+                        }
+#endif
                     }
                 }
             }
@@ -1503,6 +1510,7 @@ namespace System.Net.Sockets.Kcp
             var offset = 0;
             int flag = 0;
             uint maxack = 0;
+            uint latest_ts = 0;
             while (true)
             {
                 uint ts = 0;
@@ -1569,10 +1577,20 @@ namespace System.Net.Sockets.Kcp
                     {
                         flag = 1;
                         maxack = sn;
+                        latest_ts = ts;
                     }
                     else if (Itimediff(sn, maxack) > 0)
                     {
+#if !IKCP_FASTACK_CONSERVE
                         maxack = sn;
+                        latest_ts = ts;
+#else
+                        if (Itimediff(ts, latest_ts) > 0)
+                        {
+                            maxack = sn;
+                            latest_ts = ts;
+                        }
+#endif
                     }
 
                 }
@@ -1624,7 +1642,7 @@ namespace System.Net.Sockets.Kcp
 
             if (flag != 0)
             {
-                Parse_fastack(maxack);
+                Parse_fastack(maxack, latest_ts);
             }
 
             if (Itimediff(this.snd_una, temp_una) > 0)
@@ -1683,6 +1701,7 @@ namespace System.Net.Sockets.Kcp
             var offset = 0;
             int flag = 0;
             uint maxack = 0;
+            uint latest_ts = 0;
             while (true)
             {
                 uint ts = 0;
@@ -1749,10 +1768,20 @@ namespace System.Net.Sockets.Kcp
                     {
                         flag = 1;
                         maxack = sn;
+                        latest_ts = ts;
                     }
                     else if (Itimediff(sn, maxack) > 0)
                     {
+#if !IKCP_FASTACK_CONSERVE
                         maxack = sn;
+                        latest_ts = ts;
+#else
+                        if (Itimediff(ts, latest_ts) > 0)
+                        {
+                            maxack = sn;
+                            latest_ts = ts;
+                        }
+#endif
                     }
 
                 }
@@ -1804,7 +1833,7 @@ namespace System.Net.Sockets.Kcp
 
             if (flag != 0)
             {
-                Parse_fastack(maxack);
+                Parse_fastack(maxack, latest_ts);
             }
 
             if (Itimediff(this.snd_una, temp_una) > 0)
