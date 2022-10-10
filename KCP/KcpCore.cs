@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -1317,5 +1318,161 @@ namespace System.Net.Sockets.Kcp
         }
 
         #endregion
+
+
+    }
+
+    public partial class KcpCore<Segment> : IKcpSendable
+    {
+        /// <summary>
+        /// user/upper level send, returns below zero for error
+        /// </summary>
+        /// <param name="span"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        public int Send(ReadOnlySpan<byte> span, object option = null)
+        {
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
+            if (mss <= 0)
+            {
+                throw new InvalidOperationException($" mss <= 0 ");
+            }
+
+
+            if (span.Length == 0)
+            {
+                return -1;
+            }
+            var offset = 0;
+            int count;
+
+            #region append to previous segment in streaming mode (if possible)
+            /// 基于线程安全和数据结构的等原因,移除了追加数据到最后一个包行为。
+            #endregion
+
+            #region fragment
+
+            if (span.Length <= mss)
+            {
+                count = 1;
+            }
+            else
+            {
+                count = (int)(span.Length + mss - 1) / (int)mss;
+            }
+
+            if (count > IKCP_WND_RCV)
+            {
+                return -2;
+            }
+
+            if (count == 0)
+            {
+                count = 1;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                int size;
+                if (span.Length - offset > mss)
+                {
+                    size = (int)mss;
+                }
+                else
+                {
+                    size = (int)span.Length - offset;
+                }
+
+                var seg = SegmentManager.Alloc(size);
+                span.Slice(offset, size).CopyTo(seg.data);
+                offset += size;
+                seg.frg = (byte)(count - i - 1);
+                snd_queue.Enqueue(seg);
+            }
+
+            #endregion
+
+            return 0;
+        }
+
+        //public int Send(Span<byte> span)
+        //{
+        //    return Send((ReadOnlySpan<byte>)span);
+        //}
+
+        public int Send(ReadOnlySequence<byte> span, object option = null)
+        {
+            if (CheckDispose())
+            {
+                //检查释放
+                return -4;
+            }
+
+            if (mss <= 0)
+            {
+                throw new InvalidOperationException($" mss <= 0 ");
+            }
+
+
+            if (span.Length == 0)
+            {
+                return -1;
+            }
+            var offset = 0;
+            int count;
+
+            #region append to previous segment in streaming mode (if possible)
+            /// 基于线程安全和数据结构的等原因,移除了追加数据到最后一个包行为。
+            #endregion
+
+            #region fragment
+
+            if (span.Length <= mss)
+            {
+                count = 1;
+            }
+            else
+            {
+                count = (int)(span.Length + mss - 1) / (int)mss;
+            }
+
+            if (count > IKCP_WND_RCV)
+            {
+                return -2;
+            }
+
+            if (count == 0)
+            {
+                count = 1;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                int size;
+                if (span.Length - offset > mss)
+                {
+                    size = (int)mss;
+                }
+                else
+                {
+                    size = (int)span.Length - offset;
+                }
+
+                var seg = SegmentManager.Alloc(size);
+                span.Slice(offset, size).CopyTo(seg.data);
+                offset += size;
+                seg.frg = (byte)(count - i - 1);
+                snd_queue.Enqueue(seg);
+            }
+
+            #endregion
+
+            return 0;
+        }
     }
 }

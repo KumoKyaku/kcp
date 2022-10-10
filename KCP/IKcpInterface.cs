@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
+using System.Buffers;
 
 namespace System.Net.Sockets.Kcp
 {
@@ -81,6 +82,54 @@ namespace System.Net.Sockets.Kcp
         void Update(in DateTime time);
         void Update(in DateTimeOffset time);
     }
+
+    public interface IKcpSendable
+    {
+        /// <summary>
+        /// 将要发送到网络的数据Send到kcp协议中
+        /// </summary>
+        /// <param name="span"></param>
+        /// <param name="option"></param>
+        int Send(ReadOnlySpan<byte> span, object option = null);
+        /// <summary>
+        /// 将要发送到网络的数据Send到kcp协议中
+        /// </summary>
+        /// <param name="span"></param>
+        /// <param name="option"></param>
+        int Send(ReadOnlySequence<byte> span, object option = null);
+    }
+
+
+    /// <summary>
+    /// kcp协议输入输出标准接口
+    /// </summary>
+    public interface IKcpIO : IKcpSendable
+    {
+        /// <summary>
+        /// 下层收到数据后添加到kcp协议中
+        /// </summary>
+        /// <param name="span"></param>
+        int Input(ReadOnlySpan<byte> span);
+        /// <summary>
+        /// 下层收到数据后添加到kcp协议中
+        /// </summary>
+        /// <param name="span"></param>
+        int Input(ReadOnlySequence<byte> span);
+        /// <summary>
+        /// 从kcp中取出一个整合完毕的数据包
+        /// </summary>
+        /// <returns></returns>
+        ValueTask Recv(IBufferWriter<byte> writer, object option = null);
+
+        /// <summary>
+        /// 从kcp协议中取出需要发送到网络的数据。
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        ValueTask Output(IBufferWriter<byte> writer, object option = null);
+    }
+
 }
 
 
