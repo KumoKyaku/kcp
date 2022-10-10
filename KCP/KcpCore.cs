@@ -1503,7 +1503,7 @@ namespace System.Net.Sockets.Kcp
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
             if (CanLog(KcpLogMask.IKCP_LOG_INPUT))
             {
-                TraceListener.WriteLine($"[RI] {span.Length} bytes");
+                TraceListener.WriteLine($"[RI] {span.Length} bytes", KcpLogMask.IKCP_LOG_INPUT.ToString());
             }
 #endif
 
@@ -1599,9 +1599,23 @@ namespace System.Net.Sockets.Kcp
 #endif
                     }
 
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_ACK))
+                    {
+                        TraceListener.WriteLine($"input ack: sn={sn} rtt={Itimediff(current, ts)} rto={rx_rto}", KcpLogMask.IKCP_LOG_IN_ACK.ToString());
+                    }
+#endif
+
                 }
                 else if (IKCP_CMD_PUSH == cmd)
                 {
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_DATA))
+                    {
+                        TraceListener.WriteLine($"input psh: sn={sn} ts={ts}", KcpLogMask.IKCP_LOG_IN_DATA.ToString());
+                    }
+#endif
                     if (Itimediff(sn, rcv_nxt + rcv_wnd) < 0)
                     {
                         ///instead of ikcp_ack_push
@@ -1633,10 +1647,23 @@ namespace System.Net.Sockets.Kcp
                     // ready to send back IKCP_CMD_WINS in Ikcp_flush
                     // tell remote my window size
                     probe |= IKCP_ASK_TELL;
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_PROBE))
+                    {
+                        TraceListener.WriteLine($"input probe", KcpLogMask.IKCP_LOG_IN_PROBE.ToString());
+                    }
+#endif
                 }
                 else if (IKCP_CMD_WINS == cmd)
                 {
                     // do nothing
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_WINS))
+                    {
+                        TraceListener.WriteLine($"input wins: {wnd}", KcpLogMask.IKCP_LOG_IN_WINS.ToString());
+                    }
+#endif
                 }
                 else
                 {
@@ -1703,7 +1730,7 @@ namespace System.Net.Sockets.Kcp
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
             if (CanLog(KcpLogMask.IKCP_LOG_INPUT))
             {
-                TraceListener.WriteLine($"[RI] {span.Length} bytes");
+                TraceListener.WriteLine($"[RI] {span.Length} bytes", KcpLogMask.IKCP_LOG_INPUT.ToString());
             }
 #endif
 
@@ -1799,9 +1826,23 @@ namespace System.Net.Sockets.Kcp
 #endif
                     }
 
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_ACK))
+                    {
+                        TraceListener.WriteLine($"input ack: sn={sn} rtt={Itimediff(current, ts)} rto={rx_rto}", KcpLogMask.IKCP_LOG_IN_ACK.ToString());
+                    }
+#endif
+
                 }
                 else if (IKCP_CMD_PUSH == cmd)
                 {
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_DATA))
+                    {
+                        TraceListener.WriteLine($"input psh: sn={sn} ts={ts}", KcpLogMask.IKCP_LOG_IN_DATA.ToString());
+                    }
+#endif
                     if (Itimediff(sn, rcv_nxt + rcv_wnd) < 0)
                     {
                         ///instead of ikcp_ack_push
@@ -1833,10 +1874,23 @@ namespace System.Net.Sockets.Kcp
                     // ready to send back IKCP_CMD_WINS in Ikcp_flush
                     // tell remote my window size
                     probe |= IKCP_ASK_TELL;
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_PROBE))
+                    {
+                        TraceListener.WriteLine($"input probe", KcpLogMask.IKCP_LOG_IN_PROBE.ToString());
+                    }
+#endif
                 }
                 else if (IKCP_CMD_WINS == cmd)
                 {
                     // do nothing
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                    if (CanLog(KcpLogMask.IKCP_LOG_IN_WINS))
+                    {
+                        TraceListener.WriteLine($"input wins: {wnd}", KcpLogMask.IKCP_LOG_IN_WINS.ToString());
+                    }
+#endif
                 }
                 else
                 {
@@ -1886,6 +1940,7 @@ namespace System.Net.Sockets.Kcp
 
             return 0;
         }
+
         public int ReadHeader(ReadOnlySpan<byte> header,
                               ref uint conv_,
                               ref byte cmd,
