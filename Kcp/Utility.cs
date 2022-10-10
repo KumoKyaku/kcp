@@ -49,11 +49,11 @@ namespace System.Net.Sockets.Kcp
         {
             if (local)
             {
-                return $"sn:{segment.sn} una:{segment.una} frg:{segment.frg} wnd:{segment.wnd}    [ LocalValue: xmit:{segment.xmit} fastack:{segment.fastack}  rto:{segment.rto} ]";
+                return $"sn:{segment.sn} una:{segment.una} frg:{segment.frg,2} wnd:{segment.wnd}    [ LocalValue: xmit:{segment.xmit} fastack:{segment.fastack}  rto:{segment.rto} ]";
             }
             else
             {
-                return $"sn:{segment.sn} una:{segment.una} frg:{segment.frg} wnd:{segment.wnd}";
+                return $"sn:{segment.sn} una:{segment.una} frg:{segment.frg,2} wnd:{segment.wnd}";
             }
 
         }

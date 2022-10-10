@@ -232,8 +232,8 @@ namespace System.Net.Sockets.Kcp
         /// <summary>
         /// 触发快速重传的重复ack个数
         /// </summary>
-        protected int fastresend;
-        protected int fastlimit;
+        public int fastresend;
+        public int fastlimit;
         /// <summary>
         /// 取消拥塞控制
         /// </summary>
@@ -1950,7 +1950,7 @@ namespace System.Net.Sockets.Kcp
             return 0;
         }
 
-        public int ReadHeader(ReadOnlySpan<byte> header,
+        public static int ReadHeader(ReadOnlySpan<byte> header,
                               ref uint conv_,
                               ref byte cmd,
                               ref byte frg,

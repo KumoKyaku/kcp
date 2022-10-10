@@ -22,6 +22,55 @@ namespace System.Net.Sockets.Kcp.Tests
             Assert.AreEqual(t1, t3);
             Assert.AreEqual(t2, t3);
         }
+
+        [TestMethod()]
+        public void ReadHeaderTest()
+        {
+            unsafe
+            {
+                ///在栈上分配这个segment,这个segment随用随销毁，不会被保存
+                const int len = KcpSegment.LocalOffset + KcpSegment.HeadOffset;
+                var ptr = stackalloc byte[len];
+                KcpSegment seg = new KcpSegment(ptr, 0);
+                seg.conv = 1001;
+                seg.cmd = 100;
+                seg.frg = 20;
+                seg.wnd = 128;
+                seg.ts = 20;
+                seg.sn = 9999;
+                seg.una = 1002;
+
+                Span<byte> buffer = stackalloc byte[100];
+                seg.Encode(buffer);
+
+                uint ts = 0;
+                uint sn = 0;
+                uint length = 0;
+                uint una = 0;
+                uint conv_ = 0;
+                ushort wnd = 0;
+                byte cmd = 0;
+                byte frg = 0;
+
+                KcpCore<KcpSegment>.ReadHeader(buffer,
+                                     ref conv_,
+                                     ref cmd,
+                                     ref frg,
+                                     ref wnd,
+                                     ref ts,
+                                     ref sn,
+                                     ref una,
+                                     ref length);
+                Assert.AreEqual(seg.conv, conv_);
+                Assert.AreEqual(seg.cmd, cmd);
+                Assert.AreEqual(seg.frg, frg);
+                Assert.AreEqual(seg.wnd, wnd);
+                Assert.AreEqual(seg.ts, ts);
+                Assert.AreEqual(seg.sn, sn);
+                Assert.AreEqual(seg.una, una);
+                Assert.AreEqual(seg.len, length);
+            }
+        }
     }
 }
 

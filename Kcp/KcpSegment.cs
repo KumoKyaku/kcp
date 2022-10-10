@@ -13,7 +13,7 @@ namespace System.Net.Sockets.Kcp
     public struct KcpSegment : IKcpSegment
     {
         internal readonly unsafe byte* ptr;
-        internal unsafe KcpSegment(byte* intPtr, uint appendDateSize)
+        public unsafe KcpSegment(byte* intPtr, uint appendDateSize)
         {
             this.ptr = intPtr;
             len = appendDateSize;
