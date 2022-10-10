@@ -1500,13 +1500,19 @@ namespace System.Net.Sockets.Kcp
                 return -4;
             }
 
-            uint temp_una = snd_una;
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            if (CanLog(KcpLogMask.IKCP_LOG_INPUT))
+            {
+                TraceListener.WriteLine($"[RI] {span.Length} bytes");
+            }
+#endif
 
             if (span.Length < IKCP_OVERHEAD)
             {
                 return -1;
             }
 
+            uint prev_una = snd_una;
             var offset = 0;
             int flag = 0;
             uint maxack = 0;
@@ -1645,7 +1651,7 @@ namespace System.Net.Sockets.Kcp
                 Parse_fastack(maxack, latest_ts);
             }
 
-            if (Itimediff(this.snd_una, temp_una) > 0)
+            if (Itimediff(this.snd_una, prev_una) > 0)
             {
                 if (cwnd < rmt_wnd)
                 {
@@ -1694,13 +1700,19 @@ namespace System.Net.Sockets.Kcp
                 return -4;
             }
 
-            uint temp_una = snd_una;
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            if (CanLog(KcpLogMask.IKCP_LOG_INPUT))
+            {
+                TraceListener.WriteLine($"[RI] {span.Length} bytes");
+            }
+#endif
 
             if (span.Length < IKCP_OVERHEAD)
             {
                 return -1;
             }
 
+            uint prev_una = snd_una;
             var offset = 0;
             int flag = 0;
             uint maxack = 0;
@@ -1839,39 +1851,41 @@ namespace System.Net.Sockets.Kcp
                 Parse_fastack(maxack, latest_ts);
             }
 
-            if (Itimediff(this.snd_una, temp_una) > 0)
+            if (Itimediff(this.snd_una, prev_una) > 0)
             {
                 if (cwnd < rmt_wnd)
                 {
-                    var mss_ = mss;
                     if (cwnd < ssthresh)
                     {
                         cwnd++;
-                        incr += mss_;
+                        incr += mss;
                     }
                     else
                     {
-                        if (incr < mss_)
+                        if (incr < mss)
                         {
-                            incr = mss_;
+                            incr = mss;
                         }
-                        incr += (mss_ * mss_) / incr + (mss_ / 16);
-                        if ((cwnd + 1) * mss_ <= incr)
+                        incr += (mss * mss) / incr + (mss / 16);
+                        if ((cwnd + 1) * mss <= incr)
                         {
+#if true
+                            cwnd = (incr + mss - 1) / ((mss > 0) ? mss : 1);
+#else
                             cwnd++;
+#endif
                         }
                     }
                     if (cwnd > rmt_wnd)
                     {
                         cwnd = rmt_wnd;
-                        incr = rmt_wnd * mss_;
+                        incr = rmt_wnd * mss;
                     }
                 }
             }
 
             return 0;
         }
-
         public int ReadHeader(ReadOnlySpan<byte> header,
                               ref uint conv_,
                               ref byte cmd,
