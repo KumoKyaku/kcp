@@ -99,11 +99,7 @@ namespace System.Net.Sockets.Kcp
         int Send(ReadOnlySequence<byte> span, object option = null);
     }
 
-
-    /// <summary>
-    /// kcp协议输入输出标准接口
-    /// </summary>
-    public interface IKcpIO : IKcpSendable
+    public interface IKcpInputable
     {
         /// <summary>
         /// 下层收到数据后添加到kcp协议中
@@ -115,6 +111,13 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         /// <param name="span"></param>
         int Input(ReadOnlySequence<byte> span);
+    }
+
+    /// <summary>
+    /// kcp协议输入输出标准接口
+    /// </summary>
+    public interface IKcpIO : IKcpSendable, IKcpInputable
+    {
         /// <summary>
         /// 从kcp中取出一个整合完毕的数据包
         /// </summary>

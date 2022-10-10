@@ -1477,7 +1477,7 @@ namespace System.Net.Sockets.Kcp
         }
     }
 
-    public partial class KcpCore<Segment>
+    public partial class KcpCore<Segment> : IKcpInputable
     {
         /// <summary>
         /// when you received a low level packet (eg. UDP packet), call it
