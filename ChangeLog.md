@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security  
 -->
 
+## [Unreleased] - YYYY-MM-NN
+
+### Added   
+### Changed  
+### Deprecated  
+### Removed  
+### Fixed  
+### Security  
+
+## [2.5.1] - 2022-10-10
+
+### Added   
+- KcpSegment增加单元测试
+- public int fastresend; 
+- public int fastlimit;
+
 ## [2.5.0] - 2022-10-10
 
 ### Added   
