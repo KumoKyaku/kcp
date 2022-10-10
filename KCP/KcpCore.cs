@@ -1048,11 +1048,12 @@ namespace System.Net.Sockets.Kcp
                         this.xmit++;
                         if (nodelay == 0)
                         {
-                            segment.rto += rx_rto;
+                            segment.rto += Math.Max(segment.rto, rx_rto);
                         }
                         else
                         {
-                            segment.rto += rx_rto / 2;
+                            var step = nodelay < 2 ? segment.rto : rx_rto;
+                            segment.rto += step / 2;
                         }
 
                         segment.resendts = current_ + segment.rto;
