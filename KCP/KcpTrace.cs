@@ -8,7 +8,7 @@ namespace System.Net.Sockets.Kcp
     {
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
         public System.Diagnostics.TraceListener TraceListener { get; set; }
-        public KcpLogMask LogMask { get; set; }
+        public KcpLogMask LogMask { get; set; } = KcpLogMask.IKCP_LOG_PARSE_DATA | KcpLogMask.IKCP_LOG_NEED_SEND | KcpLogMask.IKCP_LOG_DEAD_LINK;
 
         public bool CanLog(KcpLogMask mask)
         {
@@ -36,6 +36,10 @@ namespace System.Net.Sockets.Kcp
         IKCP_LOG_OUT_ACK = 1 << 9,
         IKCP_LOG_OUT_PROBE = 1 << 10,
         IKCP_LOG_OUT_WINS = 1 << 11,
+
+        IKCP_LOG_PARSE_DATA = 1 << 12,
+        IKCP_LOG_NEED_SEND = 1 << 13,
+        IKCP_LOG_DEAD_LINK = 1 << 14,
     }
 }
 

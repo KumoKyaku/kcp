@@ -805,7 +805,10 @@ namespace System.Net.Sockets.Kcp
                 {
 
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
-                    TraceListener?.WriteLine($"{newseg.ToLogString()}", "Parse_data");
+                    if (CanLog(KcpLogMask.IKCP_LOG_PARSE_DATA))
+                    {
+                        TraceListener.WriteLine($"{newseg.ToLogString()}", KcpLogMask.IKCP_LOG_PARSE_DATA.ToString());
+                    }
 #endif
 
                     if (p == null)
@@ -1095,7 +1098,10 @@ namespace System.Net.Sockets.Kcp
                         }
 
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
-                        TraceListener?.WriteLine($"{segment.ToLogString(true)}", "needsend");
+                        if (CanLog(KcpLogMask.IKCP_LOG_NEED_SEND))
+                        {
+                            TraceListener.WriteLine($"{segment.ToLogString(true)}", KcpLogMask.IKCP_LOG_NEED_SEND.ToString());
+                        }
 #endif
 
                         offset += segment.Encode(buffer.Memory.Span.Slice(offset));
@@ -1105,7 +1111,10 @@ namespace System.Net.Sockets.Kcp
                             state = -1;
 
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
-                            TraceListener?.WriteLine($"state = -1; 断开连接", "dead_link");
+                            if (CanLog(KcpLogMask.IKCP_LOG_DEAD_LINK))
+                            {
+                                TraceListener.WriteLine($"state = -1; xmit:{segment.xmit} >= dead_link:{dead_link}", KcpLogMask.IKCP_LOG_DEAD_LINK.ToString());
+                            }
 #endif
                         }
                     }
