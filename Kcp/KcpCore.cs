@@ -1346,9 +1346,9 @@ namespace System.Net.Sockets.Kcp
         /// user/upper level send, returns below zero for error
         /// </summary>
         /// <param name="span"></param>
-        /// <param name="option"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public int Send(ReadOnlySpan<byte> span, object option = null)
+        public int Send(ReadOnlySpan<byte> span, object options = null)
         {
             if (CheckDispose())
             {
@@ -1423,7 +1423,7 @@ namespace System.Net.Sockets.Kcp
         //    return Send((ReadOnlySpan<byte>)span);
         //}
 
-        public int Send(ReadOnlySequence<byte> span, object option = null)
+        public int Send(ReadOnlySequence<byte> span, object options = null)
         {
             if (CheckDispose())
             {

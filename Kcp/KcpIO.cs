@@ -15,7 +15,7 @@ namespace System.Net.Sockets.Kcp
     /// <para></para>这是个简单的实现,更复杂使用微软官方实现<see cref="System.Threading.Channels.Channel.CreateBounded{T}(int)"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class QueuePipe<T> : Queue<T>
+    internal class QueuePipe<T> : Queue<T>
     {
         readonly object _innerLock = new object();
         private TaskCompletionSource<T> source;
@@ -193,7 +193,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        public async ValueTask Recv(IBufferWriter<byte> writer, object option = null)
+        public async ValueTask Recv(IBufferWriter<byte> writer, object options = null)
         {
             var arraySegment = await recvSignal.ReadAsync().ConfigureAwait(false);
             for (int i = arraySegment.Offset; i < arraySegment.Count; i++)
@@ -212,7 +212,7 @@ namespace System.Net.Sockets.Kcp
             writer.Advance(curCount);
         }
 
-        public async ValueTask Output(IBufferWriter<byte> writer, object option = null)
+        public async ValueTask Output(IBufferWriter<byte> writer, object options = null)
         {
             var (Owner, Count) = await outq.ReadAsync().ConfigureAwait(false);
             WriteOut(writer, Owner, Count);

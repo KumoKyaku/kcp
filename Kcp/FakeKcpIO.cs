@@ -27,7 +27,7 @@ namespace System.Net.Sockets.Kcp
             return Input(buffer);
         }
 
-        public async ValueTask Recv(IBufferWriter<byte> writer, object option = null)
+        public async ValueTask Recv(IBufferWriter<byte> writer, object options = null)
         {
             var buffer = await recv.ReadAsync().ConfigureAwait(false);
             var target = writer.GetMemory(buffer.Length);
@@ -37,7 +37,7 @@ namespace System.Net.Sockets.Kcp
 
 
         QueuePipe<byte[]> send = new QueuePipe<byte[]>();
-        public int Send(ReadOnlySpan<byte> span, object option = null)
+        public int Send(ReadOnlySpan<byte> span, object options = null)
         {
             byte[] buffer = new byte[span.Length];
             span.CopyTo(buffer);
@@ -45,14 +45,14 @@ namespace System.Net.Sockets.Kcp
             return 0;
         }
 
-        public int Send(ReadOnlySequence<byte> span, object option = null)
+        public int Send(ReadOnlySequence<byte> span, object options = null)
         {
             byte[] buffer = new byte[span.Length];
             span.CopyTo(buffer);
             return Send(buffer);
         }
 
-        public async ValueTask Output(IBufferWriter<byte> writer, object option = null)
+        public async ValueTask Output(IBufferWriter<byte> writer, object options = null)
         {
             var buffer = await send.ReadAsync().ConfigureAwait(false);
             Write(writer, buffer);

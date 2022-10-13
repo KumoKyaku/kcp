@@ -89,14 +89,14 @@ namespace System.Net.Sockets.Kcp
         /// 将要发送到网络的数据Send到kcp协议中
         /// </summary>
         /// <param name="span"></param>
-        /// <param name="option"></param>
-        int Send(ReadOnlySpan<byte> span, object option = null);
+        /// <param name="options"></param>
+        int Send(ReadOnlySpan<byte> span, object options = null);
         /// <summary>
         /// 将要发送到网络的数据Send到kcp协议中
         /// </summary>
         /// <param name="span"></param>
-        /// <param name="option"></param>
-        int Send(ReadOnlySequence<byte> span, object option = null);
+        /// <param name="options"></param>
+        int Send(ReadOnlySequence<byte> span, object options = null);
     }
 
     public interface IKcpInputable
@@ -122,15 +122,15 @@ namespace System.Net.Sockets.Kcp
         /// 从kcp中取出一个整合完毕的数据包
         /// </summary>
         /// <returns></returns>
-        ValueTask Recv(IBufferWriter<byte> writer, object option = null);
+        ValueTask Recv(IBufferWriter<byte> writer, object options = null);
 
         /// <summary>
         /// 从kcp协议中取出需要发送到网络的数据。
         /// </summary>
         /// <param name="writer"></param>
-        /// <param name="option"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        ValueTask Output(IBufferWriter<byte> writer, object option = null);
+        ValueTask Output(IBufferWriter<byte> writer, object options = null);
     }
 
 }
