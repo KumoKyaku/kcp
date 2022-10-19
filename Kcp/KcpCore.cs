@@ -494,62 +494,6 @@ namespace System.Net.Sockets.Kcp
 
         //功能函数
 
-        [Obsolete("Use Check(in DateTimeOffset time) instead.", true)]
-        public DateTime Check(in DateTime time)
-        {
-            if (CheckDispose())
-            {
-                //检查释放
-                return default;
-            }
-
-            if (updated == 0)
-            {
-                return time;
-            }
-
-            var current_ = time.ConvertTime();
-
-            var ts_flush_ = ts_flush;
-            var tm_flush_ = 0x7fffffff;
-            var tm_packet = 0x7fffffff;
-            var minimal = 0;
-
-            if (Itimediff(current_, ts_flush_) >= 10000 || Itimediff(current_, ts_flush_) < -10000)
-            {
-                ts_flush_ = current_;
-            }
-
-            if (Itimediff(current_, ts_flush_) >= 0)
-            {
-                return time;
-            }
-
-            tm_flush_ = Itimediff(ts_flush_, current_);
-
-            lock (snd_bufLock)
-            {
-                foreach (var seg in snd_buf)
-                {
-                    var diff = Itimediff(seg.resendts, current_);
-                    if (diff <= 0)
-                    {
-                        return time;
-                    }
-
-                    if (diff < tm_packet)
-                    {
-                        tm_packet = diff;
-                    }
-                }
-            }
-
-            minimal = tm_packet < tm_flush_ ? tm_packet : tm_flush_;
-            if (minimal >= interval) minimal = (int)interval;
-
-            return time + TimeSpan.FromMilliseconds(minimal);
-        }
-
         /// <summary>
         /// Determine when should you invoke ikcp_update:
         /// returns when you should invoke ikcp_update in millisec, if there
@@ -1176,43 +1120,6 @@ namespace System.Net.Sockets.Kcp
         /// ikcp_check when to call it again (without ikcp_input/_send calling).
         /// </summary>
         /// <param name="time">DateTime.UtcNow</param>
-        [Obsolete("Use Update(in DateTimeOffset time) instead.", true)]
-        public void Update(in DateTime time)
-        {
-            if (CheckDispose())
-            {
-                //检查释放
-                return;
-            }
-
-            current = time.ConvertTime();
-
-            if (updated == 0)
-            {
-                updated = 1;
-                ts_flush = current;
-            }
-
-            var slap = Itimediff(current, ts_flush);
-
-            if (slap >= 10000 || slap < -10000)
-            {
-                ts_flush = current;
-                slap = 0;
-            }
-
-            if (slap >= 0)
-            {
-                ts_flush += interval;
-                if (Itimediff(current, ts_flush) >= 0)
-                {
-                    ts_flush = current + interval;
-                }
-
-                Flush();
-            }
-        }
-
         public void Update(in DateTimeOffset time)
         {
             if (CheckDispose())
