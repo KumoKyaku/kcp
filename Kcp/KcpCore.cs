@@ -9,14 +9,7 @@ using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
 {
-    /// <summary>
-    /// https://luyuhuang.tech/2020/12/09/kcp.html
-    /// https://github.com/skywind3000/kcp/wiki/Network-Layer
-    /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
-    /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
-    /// </summary>
-    public partial class KcpCore<Segment> : IKcpSetting, IKcpUpdate, IDisposable
-        where Segment : IKcpSegment
+    public abstract class KcpConst
     {
         // 为了减少阅读难度，变量名尽量于 C版 统一
         /*
@@ -110,7 +103,17 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
         public const int IKCP_FASTACK_LIMIT = 5;        // max times to trigger fastack
         #endregion
+    }
 
+    /// <summary>
+    /// https://luyuhuang.tech/2020/12/09/kcp.html
+    /// https://github.com/skywind3000/kcp/wiki/Network-Layer
+    /// <para>外部buffer ----拆分拷贝----等待列表 -----移动----发送列表----拷贝----发送buffer---output</para>
+    /// https://github.com/skywind3000/kcp/issues/118#issuecomment-338133930
+    /// </summary>
+    public partial class KcpCore<Segment> : KcpConst, IKcpSetting, IKcpUpdate, IDisposable
+        where Segment : IKcpSegment
+    {
         #region kcp members
         /// <summary>
         /// 频道号

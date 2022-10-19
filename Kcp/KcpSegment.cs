@@ -1,4 +1,5 @@
-﻿using System.Buffers.Binary;
+﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 
 namespace System.Net.Sockets.Kcp
@@ -137,7 +138,7 @@ namespace System.Net.Sockets.Kcp
 
         ///以下为需要网络传输的参数
         public const int LocalOffset = 4 * 4;
-        public const int HeadOffset = Kcp.IKCP_OVERHEAD;
+        public const int HeadOffset = KcpConst.IKCP_OVERHEAD;
 
         /// <summary>
         /// offset = <see cref="LocalOffset"/>

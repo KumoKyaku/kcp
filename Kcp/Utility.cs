@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -44,7 +45,8 @@ namespace System.Net.Sockets.Kcp
 #endif
         }
 
-        internal static string ToLogString<T>(this T segment, bool local = false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string ToLogString<T>(this T segment, bool local = false)
             where T : IKcpSegment
         {
             if (local)
@@ -55,6 +57,17 @@ namespace System.Net.Sockets.Kcp
             {
                 return $"sn:{segment.sn,2} una:{segment.una,2} frg:{segment.frg,2} cmd:{segment.cmd,2} len:{segment.len,2} wnd:{segment.wnd}";
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Encode<T>(this T Seg, IBufferWriter<byte> writer)
+            where T : IKcpSegment
+        {
+            var totalLength = (int)(KcpSegment.HeadOffset + Seg.len);
+            var span = writer.GetSpan(totalLength);
+            Seg.Encode(span);
+            writer.Advance(totalLength);
+            return totalLength;
         }
     }
 }

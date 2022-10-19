@@ -23,11 +23,9 @@ namespace System.Net.Sockets.Kcp
     /// <summary>
     /// Kcp回调
     /// </summary>
-    public interface IKcpOutputer
+    public interface IKcpIBufferWriter : IBufferWriter<byte>
     {
-        Span<byte> GetSpan(int sizeHint = 0);
-        void Advance(int bytes);
-        void Flush();
+        void FlushAsync();
     }
 
 
