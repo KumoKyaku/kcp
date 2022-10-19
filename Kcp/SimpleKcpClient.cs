@@ -47,16 +47,14 @@ namespace System.Net.Sockets.Kcp.Simple
         public async ValueTask<byte[]> ReceiveAsync()
         {
             var (buffer, avalidLength) = kcp.TryRecv();
-            if (buffer == null)
+            while (buffer == null)
             {
                 await Task.Delay(10);
-                return await ReceiveAsync();
+                (buffer, avalidLength) = kcp.TryRecv();
             }
-            else
-            {
-                var s = buffer.Memory.Span.Slice(0, avalidLength).ToArray();
-                return s;
-            }
+
+            var s = buffer.Memory.Span.Slice(0, avalidLength).ToArray();
+            return s;
         }
 
         private async void BeginRecv()
