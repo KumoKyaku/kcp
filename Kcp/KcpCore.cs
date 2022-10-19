@@ -103,6 +103,12 @@ namespace System.Net.Sockets.Kcp
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
         public const int IKCP_FASTACK_LIMIT = 5;        // max times to trigger fastack
         #endregion
+
+        /// <summary>
+        /// <para>https://github.com/skywind3000/kcp/issues/53</para>
+        /// 按照 C版 设计，使用小端字节序
+        /// </summary>
+        public static bool IsLittleEndian = true;
     }
 
     /// <summary>
@@ -247,12 +253,6 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         public int stream;
         protected BufferOwner buffer;
-
-        /// <summary>
-        /// <para>https://github.com/skywind3000/kcp/issues/53</para>
-        /// 按照 C版 设计，使用小端字节序
-        /// </summary>
-        public static bool IsLittleEndian = true;
 
         #endregion
 

@@ -24,12 +24,12 @@ namespace System.Net.Sockets.Kcp.Simple
         public SimpleKcpClient(int port, IPEndPoint endPoint)
         {
             client = new UdpClient(port);
-            kcp = new Kcp(2001, this);
+            kcp = new SimpleSegManager.Kcp(2001, this);
             this.EndPoint = endPoint;
             BeginRecv();
         }
 
-        public Kcp kcp { get; }
+        public SimpleSegManager.Kcp kcp { get; }
         public IPEndPoint EndPoint { get; set; }
 
         public void Output(IMemoryOwner<byte> buffer, int avalidLength)

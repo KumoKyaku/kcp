@@ -1,11 +1,6 @@
-﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
+﻿using System.Buffers;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using static System.Math;
-using static System.Net.Sockets.Kcp.PoolSegManager;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
@@ -235,15 +230,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
     }
-
-    [Obsolete("Use SimpleSegManager.KcpIO")]
-    public class KcpIO : KcpIO<KcpSegment>
-    {
-        public KcpIO(uint conv_)
-            : base(conv_)
-        {
-            SegmentManager = SimpleSegManager.Default;
-        }
-    }
-
 }
+
+
+

@@ -216,8 +216,8 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
             var handle2 = new Handle();
 
             const int conv = 123;
-            var kcp1 = new Kcp(conv, handle1);
-            var kcp2 = new Kcp(conv, handle2);
+            var kcp1 = new SimpleSegManager.Kcp(conv, handle1);
+            var kcp2 = new SimpleSegManager.Kcp(conv, handle2);
 
             ///kcp设置
             ///https://github.com/skywind3000/kcp/issues/39#issuecomment-244592173

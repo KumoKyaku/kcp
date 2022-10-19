@@ -1,10 +1,4 @@
 ﻿using System.Buffers;
-using System.Buffers.Binary;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using static System.Math;
 using BufferOwner = System.Buffers.IMemoryOwner<byte>;
 
 namespace System.Net.Sockets.Kcp
@@ -378,16 +372,6 @@ namespace System.Net.Sockets.Kcp
 
                 return (int)length;
             }
-        }
-    }
-
-    [Obsolete("Use SimpleSegManager.Kcp")]
-    public class Kcp : Kcp<KcpSegment>
-    {
-        public Kcp(uint conv_, IKcpCallback callback, IRentable rentable = null)
-            : base(conv_, callback, rentable)
-        {
-            SegmentManager = SimpleSegManager.Default;
         }
     }
 }

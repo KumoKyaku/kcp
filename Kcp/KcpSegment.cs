@@ -340,7 +340,7 @@ namespace System.Net.Sockets.Kcp
             ///备用偏移值 现阶段没有使用
             const int offset = 0;
 
-            if (Kcp.IsLittleEndian)
+            if (KcpConst.IsLittleEndian)
             {
                 if (BitConverter.IsLittleEndian)
                 {
