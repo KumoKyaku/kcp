@@ -23,12 +23,15 @@ namespace System.Net.Sockets.Kcp
     /// <summary>
     /// Kcp回调
     /// </summary>
+    /// <remarks>
+    /// 失败设计，<see cref="KcpOutputWriter.Output(BufferOwner, int)"/>。IMemoryOwner是没有办法代替的。
+    /// 这里只相当于把 IKcpCallback 和 IRentable 和并。
+    /// </remarks>
     public interface IKcpOutputWriter : IBufferWriter<byte>
     {
         int UnflushedBytes { get; }
         void Flush();
     }
-
 
     /// <summary>
     /// 外部提供缓冲区,可以在外部链接一个内存池
