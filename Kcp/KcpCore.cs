@@ -445,6 +445,7 @@ namespace System.Net.Sockets.Kcp
         #endregion
 
         internal protected IKcpCallback callbackHandle;
+        internal protected IKcpOutputWriter OutputWriter;
 
         protected static uint Ibound(uint lower, uint middle, uint upper)
         {
@@ -1044,14 +1045,14 @@ namespace System.Net.Sockets.Kcp
                             buffer = CreateBuffer(BufferNeedSize);
                         }
 
+                        offset += segment.Encode(buffer.Memory.Span.Slice(offset));
+
 #if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
                         if (CanLog(KcpLogMask.IKCP_LOG_NEED_SEND))
                         {
                             TraceListener.WriteLine($"{segment.ToLogString(true)}", KcpLogMask.IKCP_LOG_NEED_SEND.ToString());
                         }
 #endif
-
-                        offset += segment.Encode(buffer.Memory.Span.Slice(offset));
 
                         if (segment.xmit >= dead_link)
                         {
@@ -1075,6 +1076,294 @@ namespace System.Net.Sockets.Kcp
                 callbackHandle.Output(buffer, offset);
                 offset = 0;
                 buffer = CreateBuffer(BufferNeedSize);
+            }
+
+            #endregion
+
+            #region update ssthresh
+            // update ssthresh 根据丢包情况计算 ssthresh 和 cwnd.
+            if (change != 0)
+            {
+                var inflight = snd_nxt - snd_una;
+                ssthresh = inflight / 2;
+                if (ssthresh < IKCP_THRESH_MIN)
+                {
+                    ssthresh = IKCP_THRESH_MIN;
+                }
+
+                cwnd = ssthresh + resent;
+                incr = cwnd * mss;
+            }
+
+            if (lost != 0)
+            {
+                ssthresh = cwnd / 2;
+                if (ssthresh < IKCP_THRESH_MIN)
+                {
+                    ssthresh = IKCP_THRESH_MIN;
+                }
+
+                cwnd = 1;
+                incr = mss;
+            }
+
+            if (cwnd < 1)
+            {
+                cwnd = 1;
+                incr = mss;
+            }
+            #endregion
+
+        }
+
+        protected void Flush2()
+        {
+            var current_ = current;
+            var change = 0;
+            var lost = 0;
+
+            if (updated == 0)
+            {
+                return;
+            }
+
+            ushort wnd_ = Wnd_unused();
+
+            unsafe
+            {
+                ///在栈上分配这个segment,这个segment随用随销毁，不会被保存
+                const int len = KcpSegment.LocalOffset + KcpSegment.HeadOffset;
+                var ptr = stackalloc byte[len];
+                KcpSegment seg = new KcpSegment(ptr, 0);
+                //seg = KcpSegment.AllocHGlobal(0);
+
+                seg.conv = conv;
+                seg.cmd = IKCP_CMD_ACK;
+                //seg.frg = 0;
+                seg.wnd = wnd_;
+                seg.una = rcv_nxt;
+                //seg.len = 0;
+                //seg.sn = 0;
+                //seg.ts = 0;
+
+                #region flush acknowledges
+
+                if (CheckDispose())
+                {
+                    //检查释放
+                    return;
+                }
+
+                while (acklist.TryDequeue(out var temp))
+                {
+                    if (OutputWriter.UnflushedBytes + IKCP_OVERHEAD > mtu)
+                    {
+                        OutputWriter.Flush();
+                    }
+
+                    seg.sn = temp.sn;
+                    seg.ts = temp.ts;
+                    seg.Encode(OutputWriter);
+                }
+
+                #endregion
+
+                #region probe window size (if remote window size equals zero)
+                // probe window size (if remote window size equals zero)
+                if (rmt_wnd == 0)
+                {
+                    if (probe_wait == 0)
+                    {
+                        probe_wait = IKCP_PROBE_INIT;
+                        ts_probe = current + probe_wait;
+                    }
+                    else
+                    {
+                        if (Itimediff(current, ts_probe) >= 0)
+                        {
+                            if (probe_wait < IKCP_PROBE_INIT)
+                            {
+                                probe_wait = IKCP_PROBE_INIT;
+                            }
+
+                            probe_wait += probe_wait / 2;
+
+                            if (probe_wait > IKCP_PROBE_LIMIT)
+                            {
+                                probe_wait = IKCP_PROBE_LIMIT;
+                            }
+
+                            ts_probe = current + probe_wait;
+                            probe |= IKCP_ASK_SEND;
+                        }
+                    }
+                }
+                else
+                {
+                    ts_probe = 0;
+                    probe_wait = 0;
+                }
+                #endregion
+
+                #region flush window probing commands
+                // flush window probing commands
+                if ((probe & IKCP_ASK_SEND) != 0)
+                {
+                    seg.cmd = IKCP_CMD_WASK;
+                    if (OutputWriter.UnflushedBytes + IKCP_OVERHEAD > (int)mtu)
+                    {
+                        OutputWriter.Flush();
+                    }
+                    seg.Encode(OutputWriter);
+                }
+
+                if ((probe & IKCP_ASK_TELL) != 0)
+                {
+                    seg.cmd = IKCP_CMD_WINS;
+                    if (OutputWriter.UnflushedBytes + IKCP_OVERHEAD > (int)mtu)
+                    {
+                        OutputWriter.Flush();
+                    }
+                    seg.Encode(OutputWriter);
+                }
+
+                probe = 0;
+                #endregion
+            }
+
+            #region 刷新，将发送等待列表移动到发送列表
+
+            // calculate window size
+            var cwnd_ = Min(snd_wnd, rmt_wnd);
+            if (nocwnd == 0)
+            {
+                cwnd_ = Min(cwnd, cwnd_);
+            }
+
+            while (Itimediff(snd_nxt, snd_una + cwnd_) < 0)
+            {
+                if (snd_queue.TryDequeue(out var newseg))
+                {
+                    newseg.conv = conv;
+                    newseg.cmd = IKCP_CMD_PUSH;
+                    newseg.wnd = wnd_;
+                    newseg.ts = current_;
+                    newseg.sn = snd_nxt;
+                    snd_nxt++;
+                    newseg.una = rcv_nxt;
+                    newseg.resendts = current_;
+                    newseg.rto = rx_rto;
+                    newseg.fastack = 0;
+                    newseg.xmit = 0;
+                    lock (snd_bufLock)
+                    {
+                        snd_buf.AddLast(newseg);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            #endregion
+
+            #region 刷新 发送列表，调用Output
+
+            // calculate resent
+            var resent = fastresend > 0 ? (uint)fastresend : 0xffffffff;
+            var rtomin = nodelay == 0 ? (rx_rto >> 3) : 0;
+
+            lock (snd_bufLock)
+            {
+                // flush data segments
+                foreach (var item in snd_buf)
+                {
+                    var segment = item;
+                    var needsend = false;
+                    var debug = Itimediff(current_, segment.resendts);
+                    if (segment.xmit == 0)
+                    {
+                        //新加入 snd_buf 中, 从未发送过的报文直接发送出去;
+                        needsend = true;
+                        segment.xmit++;
+                        segment.rto = rx_rto;
+                        segment.resendts = current_ + rx_rto + rtomin;
+                    }
+                    else if (Itimediff(current_, segment.resendts) >= 0)
+                    {
+                        //发送过的, 但是在 RTO 内未收到 ACK 的报文, 需要重传;
+                        needsend = true;
+                        segment.xmit++;
+                        this.xmit++;
+                        if (nodelay == 0)
+                        {
+                            segment.rto += Math.Max(segment.rto, rx_rto);
+                        }
+                        else
+                        {
+                            var step = nodelay < 2 ? segment.rto : rx_rto;
+                            segment.rto += step / 2;
+                        }
+
+                        segment.resendts = current_ + segment.rto;
+                        lost = 1;
+                    }
+                    else if (segment.fastack >= resent)
+                    {
+                        //发送过的, 但是 ACK 失序若干次的报文, 需要执行快速重传.
+                        if (segment.xmit <= fastlimit
+                            || fastlimit <= 0)
+                        {
+                            needsend = true;
+                            segment.xmit++;
+                            segment.fastack = 0;
+                            segment.resendts = current_ + segment.rto;
+                            change++;
+                        }
+                    }
+
+                    if (needsend)
+                    {
+                        segment.ts = current_;
+                        segment.wnd = wnd_;
+                        segment.una = rcv_nxt;
+
+                        var need = IKCP_OVERHEAD + segment.len;
+                        if (OutputWriter.UnflushedBytes + need > mtu)
+                        {
+                            OutputWriter.Flush();
+                        }
+
+                        segment.Encode(OutputWriter);
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                        if (CanLog(KcpLogMask.IKCP_LOG_NEED_SEND))
+                        {
+                            TraceListener.WriteLine($"{segment.ToLogString(true)}", KcpLogMask.IKCP_LOG_NEED_SEND.ToString());
+                        }
+#endif
+
+                        if (segment.xmit >= dead_link)
+                        {
+                            state = -1;
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+                            if (CanLog(KcpLogMask.IKCP_LOG_DEAD_LINK))
+                            {
+                                TraceListener.WriteLine($"state = -1; xmit:{segment.xmit} >= dead_link:{dead_link}", KcpLogMask.IKCP_LOG_DEAD_LINK.ToString());
+                            }
+#endif
+                        }
+                    }
+                }
+            }
+
+
+            // flash remain segments
+            if (OutputWriter.UnflushedBytes > 0)
+            {
+                OutputWriter.Flush();
             }
 
             #endregion
