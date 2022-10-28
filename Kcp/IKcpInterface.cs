@@ -122,7 +122,16 @@ namespace System.Net.Sockets.Kcp
         /// 从kcp中取出一个整合完毕的数据包
         /// </summary>
         /// <returns></returns>
-        ValueTask Recv(IBufferWriter<byte> writer, object options = null);
+        ValueTask RecvAsync(IBufferWriter<byte> writer, object options = null);
+
+        /// <summary>
+        /// 从kcp中取出一个整合完毕的数据包
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name=""></param>
+        /// <param name="options"></param>
+        /// <returns>接收数据长度</returns>
+        ValueTask<int> RecvAsync(ArraySegment<byte> buffer, object options = null);
 
         /// <summary>
         /// 从kcp协议中取出需要发送到网络的数据。
@@ -130,7 +139,7 @@ namespace System.Net.Sockets.Kcp
         /// <param name="writer"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        ValueTask Output(IBufferWriter<byte> writer, object options = null);
+        ValueTask OutputAsync(IBufferWriter<byte> writer, object options = null);
     }
 
 }

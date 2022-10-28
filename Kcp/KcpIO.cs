@@ -188,7 +188,7 @@ namespace System.Net.Sockets.Kcp
             }
         }
 
-        public async ValueTask Recv(IBufferWriter<byte> writer, object options = null)
+        public async ValueTask RecvAsync(IBufferWriter<byte> writer, object options = null)
         {
             var arraySegment = await recvSignal.ReadAsync().ConfigureAwait(false);
             for (int i = arraySegment.Offset; i < arraySegment.Count; i++)
@@ -207,7 +207,25 @@ namespace System.Net.Sockets.Kcp
             writer.Advance(curCount);
         }
 
-        public async ValueTask Output(IBufferWriter<byte> writer, object options = null)
+        public async ValueTask<int> RecvAsync(ArraySegment<byte> buffer, object options = null)
+        {
+            var arraySegment = await recvSignal.ReadAsync().ConfigureAwait(false);
+            int start = buffer.Offset;
+            for (int i = arraySegment.Offset; i < arraySegment.Count; i++)
+            {
+                var target = new Memory<byte>(buffer.Array, start, buffer.Array.Length - start);
+
+                var seg = arraySegment.Array[i];
+                seg.data.CopyTo(target.Span);
+                start += seg.data.Length;
+
+                SegmentManager.Free(seg);
+            }
+            ArrayPool<Segment>.Shared.Return(arraySegment.Array, true);
+            return start - buffer.Offset;
+        }
+
+        public async ValueTask OutputAsync(IBufferWriter<byte> writer, object options = null)
         {
             var (Owner, Count) = await outq.ReadAsync().ConfigureAwait(false);
             WriteOut(writer, Owner, Count);
