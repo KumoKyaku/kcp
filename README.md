@@ -25,10 +25,14 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 - 支持`Span<byte>`
 
 ## 线程安全
-可以在不同线程同时调用Update，Recv，Send，Input方法。  
-但`不可以`多个线程同时Recv，同时Update，同时Send。  
-同名方法仅支持一个线程同时调用，否则会导致多线程错误。  
-仅Input例外，可以在任意多线程同时调用Input。  
+简单的说：  
+不能在线程1调用Recv/Update时，线程2也在调用Recv/Update。  
+可以在线程1调用Send/Input时，线程2也在调用Send/Input。
+
+- 可以在不同线程同时调用Update，Recv，Send，Input方法。  
+- 可以在任意多线程同时调用Send 和 Input。  
+- 但`不可以`多个线程同时Recv 和 Update。  
+  同名方法仅支持一个线程同时调用，否则会导致多线程错误。  
 
 ## 测试：
 [[已修复]~~同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。~~](Image/deadlock.jpg)

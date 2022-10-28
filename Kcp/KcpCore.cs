@@ -258,6 +258,11 @@ namespace System.Net.Sockets.Kcp
 
         #region 锁和容器
 
+        /// <summary>
+        /// 增加锁保证发送线程安全，否则可能导致2个消息的分片交替入队。
+        /// <para/> 用例：普通发送和广播可能会导致多个线程同时调用Send方法。
+        /// </summary>
+        protected readonly object snd_queueLock = new object();
         protected readonly object snd_bufLock = new object();
         protected readonly object rcv_bufLock = new object();
         protected readonly object rcv_queueLock = new object();
@@ -1593,23 +1598,26 @@ namespace System.Net.Sockets.Kcp
                 count = 1;
             }
 
-            for (var i = 0; i < count; i++)
+            lock (snd_queueLock)
             {
-                int size;
-                if (span.Length - offset > mss)
+                for (var i = 0; i < count; i++)
                 {
-                    size = (int)mss;
-                }
-                else
-                {
-                    size = (int)span.Length - offset;
-                }
+                    int size;
+                    if (span.Length - offset > mss)
+                    {
+                        size = (int)mss;
+                    }
+                    else
+                    {
+                        size = (int)span.Length - offset;
+                    }
 
-                var seg = SegmentManager.Alloc(size);
-                span.Slice(offset, size).CopyTo(seg.data);
-                offset += size;
-                seg.frg = (byte)(count - i - 1);
-                snd_queue.Enqueue(seg);
+                    var seg = SegmentManager.Alloc(size);
+                    span.Slice(offset, size).CopyTo(seg.data);
+                    offset += size;
+                    seg.frg = (byte)(count - i - 1);
+                    snd_queue.Enqueue(seg);
+                }
             }
 
             #endregion
@@ -1668,23 +1676,26 @@ namespace System.Net.Sockets.Kcp
                 count = 1;
             }
 
-            for (var i = 0; i < count; i++)
+            lock (snd_queueLock)
             {
-                int size;
-                if (span.Length - offset > mss)
+                for (var i = 0; i < count; i++)
                 {
-                    size = (int)mss;
-                }
-                else
-                {
-                    size = (int)span.Length - offset;
-                }
+                    int size;
+                    if (span.Length - offset > mss)
+                    {
+                        size = (int)mss;
+                    }
+                    else
+                    {
+                        size = (int)span.Length - offset;
+                    }
 
-                var seg = SegmentManager.Alloc(size);
-                span.Slice(offset, size).CopyTo(seg.data);
-                offset += size;
-                seg.frg = (byte)(count - i - 1);
-                snd_queue.Enqueue(seg);
+                    var seg = SegmentManager.Alloc(size);
+                    span.Slice(offset, size).CopyTo(seg.data);
+                    offset += size;
+                    seg.frg = (byte)(count - i - 1);
+                    snd_queue.Enqueue(seg);
+                }
             }
 
             #endregion
