@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - YYYY-MM-NN
 
+## [2.6.0] - 2022-10-29
+### Added   
+- 增加多线程说明
+- 整理代码。增加扩展函数
+- 增加snd_queueLock;
+- 增加多线程Send安全。
+
+### Changed  
+- 使用 while (true) 代替递归。
+- 使用内存池优化KcpIO
+- 重命名RecvAsync(IBufferWriter<byte> writer, object options = null);增加一个异步接收方法;
+### Removed  
+- 删除过时代码
+
 ## [2.5.2] - 2022-10-14
  
 ### Changed  
