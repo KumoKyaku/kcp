@@ -379,21 +379,24 @@ namespace System.Net.Sockets.Kcp
                         }
                     }
 
-                    while (snd_queue != null &&
+                    lock (snd_queueLock)
+                    {
+                        while (snd_queue != null &&
                         (snd_queue.TryDequeue(out var segment)
                         || !snd_queue.IsEmpty)
                         )
-                    {
-                        try
                         {
-                            SegmentManager.Free(segment);
+                            try
+                            {
+                                SegmentManager.Free(segment);
+                            }
+                            catch (Exception)
+                            {
+                                //理论上这里没有任何异常；
+                            }
                         }
-                        catch (Exception)
-                        {
-                            //理论上这里没有任何异常；
-                        }
+                        snd_queue = null;
                     }
-                    snd_queue = null;
 
                     lock (snd_bufLock)
                     {
