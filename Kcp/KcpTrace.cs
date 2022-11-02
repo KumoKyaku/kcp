@@ -6,19 +6,52 @@ namespace System.Net.Sockets.Kcp
 {
     public partial class KcpCore<Segment>
     {
-#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
-        public System.Diagnostics.TraceListener TraceListener { get; set; }
         public KcpLogMask LogMask { get; set; } = KcpLogMask.IKCP_LOG_PARSE_DATA | KcpLogMask.IKCP_LOG_NEED_SEND | KcpLogMask.IKCP_LOG_DEAD_LINK;
 
-        public bool CanLog(KcpLogMask mask)
+        public virtual bool CanLog(KcpLogMask mask)
         {
-            if ((mask & LogMask) == 0 || TraceListener == null)
+            if ((mask & LogMask) == 0)
             {
                 return false;
             }
-            return true;
-        }
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            if (TraceListener != null)
+            {
+                return true;
+            }
 #endif
+            return false;
+        }
+
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+        public System.Diagnostics.TraceListener TraceListener { get; set; }
+#endif
+
+        public virtual void LogFail(string message)
+        {
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            TraceListener?.Fail(message);
+#endif
+        }
+
+        public virtual void LogWriteLine(string message, string category)
+        {
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            TraceListener?.WriteLine(message, category);
+#endif
+        }
+
+        [Obsolete("一定要先判断CanLog 内部判断是否存在TraceListener,避免在没有TraceListener时生成字符串", true)]
+        public virtual void LogWriteLine(string message, KcpLogMask mask)
+        {
+#if NETSTANDARD2_0_OR_GREATER || NET5_0_OR_GREATER
+            if (CanLog(mask))
+            {
+                LogWriteLine(message, mask.ToString());
+            }
+#endif
+        }
     }
 
     [Flags]
