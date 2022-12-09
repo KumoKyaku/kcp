@@ -26,12 +26,12 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 
 ## 线程安全
 简单的说：  
-不能在线程1调用Recv/Update时，线程2也在调用Recv/Update。  
-可以在线程1调用Send/Input时，线程2也在调用Send/Input。
+不能在线程1调用Recv/Update时，线程2也在调用Recv/Update。函数内部使用大量共享数据结构，如果加锁严重影响性能。    
+可以在线程1调用Send/Input时，线程2也在调用Send/Input。函数内部有锁。  
 
-- 可以在不同线程同时调用Update，Recv，Send，Input方法。  
 - 可以在任意多线程同时调用Send 和 Input。  
-- 但`不可以`多个线程同时Recv 和 Update。  
+  多线程同时发送消息是安全的，可以放心的在异步函数中发送消息。    
+- 但`不可以`多个线程同时调用Recv 和 Update。  
   同名方法仅支持一个线程同时调用，否则会导致多线程错误。  
 
 ## 测试：
