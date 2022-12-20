@@ -1115,6 +1115,15 @@ namespace System.Net.Sockets.Kcp
             }
             #endregion
 
+            if (state == -1)
+            {
+                OnDeadlink();
+            }
+        }
+
+        protected virtual void OnDeadlink()
+        { 
+
         }
 
         /// <summary>
@@ -1402,6 +1411,10 @@ namespace System.Net.Sockets.Kcp
             }
             #endregion
 
+            if (state == -1)
+            {
+                OnDeadlink();
+            }
         }
 
         /// <summary>
