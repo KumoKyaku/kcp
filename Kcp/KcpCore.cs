@@ -1117,6 +1117,9 @@ namespace System.Net.Sockets.Kcp
 
         }
 
+        /// <summary>
+        /// Test OutputWriter
+        /// </summary>
         protected void Flush2()
         {
             var current_ = current;
