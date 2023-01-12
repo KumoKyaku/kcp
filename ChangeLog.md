@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -->
 
 ## [Unreleased] - YYYY-MM-NN
+
+## [2.6.1] - 2023-01-12
 ### Added   
 - 增加OnDeadlink虚函数。
 

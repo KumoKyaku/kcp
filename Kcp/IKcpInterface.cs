@@ -128,7 +128,6 @@ namespace System.Net.Sockets.Kcp
         /// 从kcp中取出一个整合完毕的数据包
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name=""></param>
         /// <param name="options"></param>
         /// <returns>接收数据长度</returns>
         ValueTask<int> RecvAsync(ArraySegment<byte> buffer, object options = null);
