@@ -1,5 +1,7 @@
-# KCP C#版。
-开箱即用。也可以使用Nuget 搜索KCP。
+# KCP C#版
+开箱即用。也可以使用 [Nuget](https://www.nuget.org/packages?q=kcp) 搜索。
+
+[![Nuget](https://img.shields.io/nuget/v/Kcp)](https://www.nuget.org/packages/Kcp/)
 
 ## Feature：
 
