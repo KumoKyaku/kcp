@@ -1559,7 +1559,7 @@ namespace System.Net.Sockets.Kcp
         /// </summary>
         /// <param name="span"></param>
         /// <param name="options"></param>
-        /// <returns></returns>
+        /// <returns>返回成功发送的字节数，-1 为错误，-2 为 EAGAIN</returns>
         public int Send(ReadOnlySpan<byte> span, object options = null)
         {
             if (CheckDispose())
@@ -1583,6 +1583,9 @@ namespace System.Net.Sockets.Kcp
 
             #region append to previous segment in streaming mode (if possible)
             /// 基于线程安全和数据结构的等原因,移除了追加数据到最后一个包行为。
+            
+            /// C语言版本snd_queue使用双向链表，可以修改最后一个包。
+            /// C#当前snd_queue使用ConcurrentQueue，无法修改最后一个包。所以无法实现流模式。
             #endregion
 
             #region fragment
@@ -1630,14 +1633,10 @@ namespace System.Net.Sockets.Kcp
 
             #endregion
 
-            return 0;
+            return offset;
         }
 
-        //public int Send(Span<byte> span)
-        //{
-        //    return Send((ReadOnlySpan<byte>)span);
-        //}
-
+        ///<inheritdoc cref="Send(ReadOnlySpan{byte}, object)"/>
         public int Send(ReadOnlySequence<byte> span, object options = null)
         {
             if (CheckDispose())
@@ -1661,6 +1660,9 @@ namespace System.Net.Sockets.Kcp
 
             #region append to previous segment in streaming mode (if possible)
             /// 基于线程安全和数据结构的等原因,移除了追加数据到最后一个包行为。
+
+            /// C语言版本snd_queue使用双向链表，可以修改最后一个包。
+            /// C#当前snd_queue使用ConcurrentQueue，无法修改最后一个包。所以无法实现流模式。
             #endregion
 
             #region fragment
@@ -1708,7 +1710,7 @@ namespace System.Net.Sockets.Kcp
 
             #endregion
 
-            return 0;
+            return offset;
         }
     }
 
