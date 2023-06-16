@@ -20,7 +20,7 @@ namespace TestKCP
             }
         }
 
-        public class TL: ConsoleTraceListener
+        public class TL : ConsoleTraceListener
         {
             public override void WriteLine(string message, string category)
             {
@@ -97,7 +97,7 @@ namespace TestKCP
                 count++;
                 if (UnitTest1.message == str)
                 {
-                    Console.WriteLine($"kcp  echo----{count}");
+                    Console.WriteLine($"kcp1 recv echo----{count}");
                 }
                 var res = kcp1.Send(buffer);
                 if (res < 0)
@@ -199,7 +199,16 @@ namespace TestKCP
                 }
             });
 
-            kcp1.Send(sendbyte);
+
+            var res = kcp1.Send(sendbyte);
+            if (res < 0)
+            {
+                Console.WriteLine($"kcp1 send error {res} ");
+            }
+            else
+            {
+                Console.WriteLine($"kcp1 send {res} bytes");
+            }
 
             while (true)
             {
