@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - YYYY-MM-NN
 
+## [2.6.2] - 2023-06-16
+
+### Added   
+- 增加rent0测试
+### Changed  
+- 允许发送0字节数据。与C版本保持一致。
+- send返回发送字节数
+### Fixed  
+- BugFix: 修复当对方发送一个data长度为0的包时rcv_queue会积压的bug
+
 ## [2.6.1] - 2023-01-12
 ### Added   
 - 增加OnDeadlink虚函数。
