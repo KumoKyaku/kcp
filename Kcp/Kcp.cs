@@ -91,7 +91,7 @@ namespace System.Net.Sockets.Kcp
 
                 peekSize = (int)length;
 
-                if (peekSize <= 0)
+                if (peekSize < 0)
                 {
                     return (null, -2);
                 }
@@ -146,7 +146,7 @@ namespace System.Net.Sockets.Kcp
 
                 peekSize = (int)length;
 
-                if (peekSize <= 0)
+                if (peekSize < 0)
                 {
                     return -2;
                 }
