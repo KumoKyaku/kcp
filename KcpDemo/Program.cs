@@ -100,9 +100,13 @@ namespace TestKCP
                     Console.WriteLine($"kcp  echo----{count}");
                 }
                 var res = kcp1.Send(buffer);
-                if (res != 0)
+                if (res < 0)
                 {
-                    Console.WriteLine($"kcp send error");
+                    Console.WriteLine($"kcp1 send error {res} ");
+                }
+                else
+                {
+                    Console.WriteLine($"kcp1 send {res} bytes");
                 }
             };
 
@@ -112,9 +116,13 @@ namespace TestKCP
                 recvCount++;
                 Console.WriteLine($"kcp2 recv----{recvCount}");
                 var res = kcp2.Send(buffer);
-                if (res != 0)
+                if (res < 0)
                 {
-                    Console.WriteLine($"kcp send error");
+                    Console.WriteLine($"kcp2 send error {res} ");
+                }
+                else
+                {
+                    Console.WriteLine($"kcp2 send {res} bytes");
                 }
             };
 
