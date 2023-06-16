@@ -1573,11 +1573,11 @@ namespace System.Net.Sockets.Kcp
                 throw new InvalidOperationException($" mss <= 0 ");
             }
 
-
-            if (span.Length == 0)
+            if (span.Length < 0)
             {
                 return -1;
             }
+
             var offset = 0;
             int count;
 
@@ -1651,11 +1651,11 @@ namespace System.Net.Sockets.Kcp
                 throw new InvalidOperationException($" mss <= 0 ");
             }
 
-
-            if (span.Length == 0)
+            if (span.Length < 0)
             {
                 return -1;
             }
+
             var offset = 0;
             int count;
 
