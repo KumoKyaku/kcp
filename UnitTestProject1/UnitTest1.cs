@@ -343,7 +343,15 @@ Platform assembly: C:\Program Files\Unity5.5.0\Editor\Data\Mono\lib\mono\2.0\Sys
             KcpSegment.FreeHGlobal(default);
         }
 
+        [TestMethod]
+        public void TestRent0()
+        {
+            var buffer = ArrayPool<byte>.Shared.Rent(0);
+            ArrayPool<byte>.Shared.Return(buffer);
 
-
+            var buffer2 = MemoryPool<byte>.Shared.Rent(0);
+            var span = buffer2.Memory.Span;
+            buffer2.Dispose();
+        }
     }
 }
