@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - YYYY-MM-NN
 
+### Added  
+- UnsafeSegManager在free上加锁
+
 ## [2.6.2] - 2023-06-16
 
 ### Added   

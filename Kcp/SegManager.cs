@@ -106,8 +106,11 @@ namespace System.Net.Sockets.Kcp
 
         public void Free(KcpSegment seg)
         {
-            IntPtr ptr = (IntPtr)seg.ptr;
-            blocks.Push(ptr);
+            lock (locker)
+            {
+                IntPtr ptr = (IntPtr)seg.ptr;
+                blocks.Push(ptr);
+            }
         }
 
         public class Kcp : Kcp<KcpSegment>
