@@ -17,8 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - YYYY-MM-NN
 
+
+## [2.6.3] - 2023-07-12
 ### Added  
-- UnsafeSegManager在free上加锁
+- UnsafeSegManager在free上加锁，修复可能的分配内存错误
 
 ## [2.6.2] - 2023-06-16
 
