@@ -37,8 +37,6 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
   同名方法仅支持一个线程同时调用，否则会导致多线程错误。  
 
 ## 测试：
-[[已修复]~~同一个进程两个Kcp echo测试，至少使用3个线程，否则可能死锁。~~](Image/deadlock.jpg)
-
 在UnitTestProject1路径下执行 dotnet test 可进行多框架测试。（需要安装dotnetcoreSDK）
 
 ## 相对C版的一些变化：
@@ -54,7 +52,7 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 | --------------   | -------------- | --------------                                        |
 | 回调函数         |                | 增加了RentBuffer回调，当KCP需要时可以从外部申请内存。 |
 | 多线程           |                | 增加了线程安全。                                      |
-| 流模式           |                | 由于数据结构变动，移除了流模式。                      |
+| 流模式           |                | 由于数据结构变动，流模式不会填充当前未发送的最末的数据包。 |
 | interval最小间隔 | 10ms           | 0ms(在特殊形况下允许CPU满负荷运转)                    |
 | --------------   | -------------- | --------------                                        |
 | API变动          |                |                                                       |
@@ -62,13 +60,5 @@ go: xtaci [kcp-go](https://github.com/xtaci/kcp-go)
 |                  |                | 增加TryRecv函数，当可以Recv时只peeksize一次。         |
 |                  | ikcp_ack_push  | 删除了此函数（已内联）                                |
 |                  | ikcp_ack_get   | 删除了此函数（已内联）                                |
-
-
----
----
-# 赞助链接
-
-![支付宝](https://github.com/KumoKyaku/KumoKyaku.github.io/blob/develop/source/_posts/%E5%9B%BE%E5%BA%8A/alipay.png)
-
 
 

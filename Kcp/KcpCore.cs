@@ -1626,7 +1626,7 @@ namespace System.Net.Sockets.Kcp
                     var seg = SegmentManager.Alloc(size);
                     span.Slice(offset, size).CopyTo(seg.data);
                     offset += size;
-                    seg.frg = (byte)(count - i - 1);
+                    seg.frg = stream == 0 ? (byte)(count - i - 1) : (byte)0;
                     snd_queue.Enqueue(seg);
                 }
             }
@@ -1703,7 +1703,7 @@ namespace System.Net.Sockets.Kcp
                     var seg = SegmentManager.Alloc(size);
                     span.Slice(offset, size).CopyTo(seg.data);
                     offset += size;
-                    seg.frg = (byte)(count - i - 1);
+                    seg.frg = stream == 0 ? (byte)(count - i - 1) : (byte)0;
                     snd_queue.Enqueue(seg);
                 }
             }
